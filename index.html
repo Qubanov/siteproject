@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KG Guide — Исследуй Кыргызстан</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Montserrat:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     ФОНОВЫЕ ЭФФЕКТЫ
+══════════════════════════════════════════ -->
+<div class="bg-overlay"></div>
+<div class="aura aura-1"></div>
+<div class="aura aura-2"></div>
+
+<!-- ══════════════════════════════════════════
+     SIDEBAR (ШТОРКА)
+══════════════════════════════════════════ -->
+<div id="sidebar" class="sidebar">
+    <button class="close-sidebar">&times;</button>
+    <div class="sidebar-inner">
+
+        <!-- Профиль в шторке -->
+        <div class="sb-profile" id="sb-profile-area">
+            <div class="sb-avatar" id="sb-avatar">?</div>
+            <div class="sb-user-info" id="sb-user-info">
+                <span class="sb-name" id="sb-name-text">Войдите в аккаунт</span>
+                <span class="sb-sub" id="sb-sub-text">для доступа к профилю</span>
+            </div>
+        </div>
+
+        <div class="sidebar-divider">Навигация</div>
+        <nav class="side-nav">
+            <a href="#" class="tab-link active" data-target="home"><span class="ni">🏔</span>Главная</a>
+            <a href="#" class="tab-link" data-target="places"><span class="ni">🗺</span>Все места</a>
+            <a href="#" class="tab-link" data-target="events"><span class="ni">🎉</span>События & Акции</a>
+            <a href="#" class="tab-link" data-target="shop"><span class="ni">🛍</span>Магазин KG</a>
+            <a href="#" class="tab-link" data-target="subscriptions"><span class="ni">⭐</span>Подписки & Тарифы</a>
+            <a href="#" class="tab-link" data-target="services"><span class="ni">✨</span>Наши услуги</a>
+            <a href="#" class="tab-link" data-target="tours"><span class="ni">🏕</span>Туры & Экскурсии</a>
+            <a href="#" class="tab-link" data-target="partnership"><span class="ni">🤝</span>Партнёрство</a>
+            <a href="#" class="tab-link" data-target="favorites"><span class="ni">❤️</span>Избранное</a>
+        </nav>
+
+        <div class="sidebar-divider">Категории</div>
+        <nav class="side-nav">
+            <a href="#" class="tab-link cat-link" data-target="places" data-cat="природа"><span class="ni">🏞</span>Природа</a>
+            <a href="#" class="tab-link cat-link" data-target="places" data-cat="кафе"><span class="ni">☕</span>Кафе</a>
+            <a href="#" class="tab-link cat-link" data-target="places" data-cat="ресторан"><span class="ni">🍽</span>Рестораны</a>
+            <a href="#" class="tab-link cat-link" data-target="places" data-cat="подарки"><span class="ni">🎁</span>Подарки</a>
+            <a href="#" class="tab-link cat-link" data-target="places" data-cat="достопримечательность"><span class="ni">🏛</span>Достопримечательности</a>
+        </nav>
+
+        <div class="sb-bottom">
+            <button class="btn-auth-sb" id="sb-auth-btn">Войти / Регистрация</button>
+        </div>
+    </div>
+</div>
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<!-- ══════════════════════════════════════════
+     МОДАЛКА АВТОРИЗАЦИИ
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="auth-overlay">
+    <div class="auth-modal">
+        <button class="modal-close" id="auth-close">&times;</button>
+        <div class="auth-tabs">
+            <button class="auth-tab active" data-auth="login">Войти</button>
+            <button class="auth-tab" data-auth="register">Регистрация</button>
+        </div>
+
+        <!-- Вход -->
+        <div class="auth-pane active" id="auth-login">
+            <h2 class="auth-title">С возвращением</h2>
+            <p class="auth-sub">Войдите чтобы сохранять места и маршруты</p>
+            <div class="auth-form">
+                <div class="auth-field">
+                    <label>Email</label>
+                    <input type="email" id="login-email" placeholder="your@email.com">
+                </div>
+                <div class="auth-field">
+                    <label>Пароль</label>
+                    <input type="password" id="login-pass" placeholder="••••••••">
+                </div>
+                <button class="btn-auth-submit" id="btn-login">Войти</button>
+                <p class="auth-switch">Нет аккаунта? <a href="#" id="go-register">Зарегистрироваться</a></p>
+            </div>
+        </div>
+
+        <!-- Регистрация -->
+        <div class="auth-pane" id="auth-register">
+            <h2 class="auth-title">Создать аккаунт</h2>
+            <p class="auth-sub">Присоединяйтесь к сообществу путешественников</p>
+            <div class="auth-form">
+                <div class="auth-field">
+                    <label>Имя</label>
+                    <input type="text" id="reg-name" placeholder="Ваше имя">
+                </div>
+                <div class="auth-field">
+                    <label>Email</label>
+                    <input type="email" id="reg-email" placeholder="your@email.com">
+                </div>
+                <div class="auth-field">
+                    <label>Пароль</label>
+                    <input type="password" id="reg-pass" placeholder="Минимум 6 символов">
+                </div>
+                <button class="btn-auth-submit" id="btn-register">Создать аккаунт</button>
+                <p class="auth-switch">Уже есть аккаунт? <a href="#" id="go-login">Войти</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════ -->
+<header id="main-header">
+    <div class="header-left">
+        <button class="open-sidebar" aria-label="Меню">
+            <div class="burger"><span></span><span></span><span></span></div>
+        </button>
+        <div class="logo tab-link" data-target="home">KG<span>Guide</span></div>
+    </div>
+
+    <!-- Топ-навигация -->
+    <nav class="top-nav">
+        <a href="#" class="tab-link active" data-target="home">Главная</a>
+        <a href="#" class="tab-link" data-target="places">Места</a>
+        <a href="#" class="tab-link" data-target="events">События</a>
+        <a href="#" class="tab-link" data-target="shop">🛍 Магазин</a>
+        <a href="#" class="tab-link" data-target="subscriptions">Подписки</a>
+        <a href="#" class="tab-link" data-target="partnership">Партнёрство</a>
+    </nav>
+
+    <div class="header-right">
+        <button class="btn-search-toggle" id="search-toggle" title="Поиск">🔍</button>
+        <!-- Профиль кнопка -->
+        <div class="profile-btn" id="profile-btn">
+            <div class="profile-avatar" id="header-avatar">?</div>
+            <span class="profile-name" id="header-name">Войти</span>
+        </div>
+    </div>
+</header>
+
+<!-- Поисковая строка -->
+<div class="search-bar" id="search-bar">
+    <input type="text" id="global-search" placeholder="Найти место, кафе, экскурсию...">
+    <button id="search-close-btn">✕</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MAIN
+══════════════════════════════════════════ -->
+<main>
+
+<!-- ─────────────────── HOME ─────────────────── -->
+<section id="home" class="tab-pane active">
+
+    <!-- HERO с коллажем фотографий -->
+    <div class="hero">
+        <!-- Коллаж из фоток разных сфер -->
+        <div class="hero-collage">
+            <div class="hc-item hc-1" style="background-image:url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=800')"></div>
+            <div class="hc-item hc-2" style="background-image:url('https://images.unsplash.com/photo-1516939884455-1445c8652f83?q=80&w=800')"></div>
+            <div class="hc-item hc-3" style="background-image:url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=800')"></div>
+            <div class="hc-item hc-4" style="background-image:url('https://images.unsplash.com/photo-1534067783941-51c9c23ecefd?q=80&w=800')"></div>
+            <div class="hc-item hc-5" style="background-image:url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=800')"></div>
+            <div class="hc-item hc-6" style="background-image:url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=800')"></div>
+        </div>
+        <div class="hero-dark-overlay"></div>
+
+        <div class="hero-content">
+            <span class="hero-tag">✦ Кыргызстан · Открой для себя ✦</span>
+            <h1 class="hero-title">Куда пойти<br><em>сегодня?</em></h1>
+            <p class="hero-desc">Лучшие места для отдыха с друзьями, романтических вечеров, семейных прогулок и незабываемых экскурсий по всему Кыргызстану.</p>
+
+            <!-- Быстрые кнопки-категории -->
+            <div class="hero-quick-btns">
+                <button class="qbtn tab-link" data-target="places" data-type="friends">
+                    <span>👥</span> С друзьями
+                </button>
+                <button class="qbtn tab-link" data-target="places" data-type="romance">
+                    <span>❤️</span> Романтика
+                </button>
+                <button class="qbtn tab-link" data-target="places" data-type="family">
+                    <span>👨‍👩‍👧</span> Семья
+                </button>
+                <button class="qbtn tab-link" data-target="tours">
+                    <span>🏕</span> Туры
+                </button>
+                <button class="qbtn tab-link" data-target="events">
+                    <span>🎉</span> События
+                </button>
+            </div>
+
+            <div class="hero-cta">
+                <button class="btn-gold tab-link" data-target="places">Исследовать места</button>
+                <button class="btn-outline tab-link" data-target="tours">Смотреть туры</button>
+            </div>
+        </div>
+
+        <div class="hero-scroll">
+            <span>Листай</span>
+            <div class="scroll-line"></div>
+        </div>
+    </div>
+
+    <!-- ЖУРНАЛ СОБЫТИЙ / НОВИНКИ -->
+    <div class="container section-block">
+        <div class="section-head">
+            <div>
+                <h2 class="title-serif">Новинки & События</h2>
+                <p class="subtitle">Актуальные акции и мероприятия прямо сейчас</p>
+            </div>
+            <button class="btn-see-all tab-link" data-target="events">Все события →</button>
+        </div>
+        <div class="events-scroll">
+            <div class="event-card ec-large" style="--bg:url('https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=1200')">
+                <div class="ec-overlay"></div>
+                <div class="ec-body">
+                    <span class="ec-tag">🔥 Горячее</span>
+                    <h3>Jazz Night на крыше</h3>
+                    <p>Живой джаз под звёздным небом Бишкека. Ограниченно мест.</p>
+                    <div class="ec-meta"><span>📅 15 апреля</span><span>📍 Бишкек</span></div>
+                    <button class="ec-btn">Узнать →</button>
+                </div>
+            </div>
+            <div class="event-card" style="--bg:url('https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=800')">
+                <div class="ec-overlay"></div>
+                <div class="ec-body">
+                    <span class="ec-tag">🏔 Тур</span>
+                    <h3>Heliskiing на Тянь-Шане</h3>
+                    <p>Скидка 20% на апрель</p>
+                    <div class="ec-meta"><span>📅 Апрель</span></div>
+                    <button class="ec-btn">Узнать →</button>
+                </div>
+            </div>
+            <div class="event-card" style="--bg:url('https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=800')">
+                <div class="ec-overlay"></div>
+                <div class="ec-body">
+                    <span class="ec-tag">⛵ Новинка</span>
+                    <h3>Яхта на Иссык-Куле</h3>
+                    <p>Новый маршрут — вечерний круиз</p>
+                    <div class="ec-meta"><span>📅 Май–Сентябрь</span></div>
+                    <button class="ec-btn">Узнать →</button>
+                </div>
+            </div>
+            <div class="event-card" style="--bg:url('https://images.unsplash.com/photo-1550966841-3ee5ad60d0d9?q=80&w=800')">
+                <div class="ec-overlay"></div>
+                <div class="ec-body">
+                    <span class="ec-tag">🍽 Гастро</span>
+                    <h3>Chef's Table</h3>
+                    <p>Авторское меню от приглашённого шефа</p>
+                    <div class="ec-meta"><span>📅 Каждую пятницу</span></div>
+                    <button class="ec-btn">Узнать →</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOOD DIVIDER — плавный переход с атмосферными фото -->
+    <div class="mood-divider">
+        <div class="mood-divider-bg">
+            <div class="mdb-photo" style="background-image:url('https://images.unsplash.com/photo-1516939884455-1445c8652f83?q=80&w=1200')"></div>
+            <div class="mdb-photo" style="background-image:url('https://images.unsplash.com/photo-1534067783941-51c9c23ecefd?q=80&w=1200')"></div>
+            <div class="mdb-photo" style="background-image:url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=1200')"></div>
+            <div class="mdb-photo" style="background-image:url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1200')"></div>
+        </div>
+        <div class="mood-divider-overlay"></div>
+        <div class="mood-divider-content">
+            <div class="mood-dots"><div class="mood-dot"></div><div class="mood-dot"></div><div class="mood-dot"></div></div>
+            <p class="mood-tagline">Открывай. Влюбляйся.<br><em>Наслаждайся.</em></p>
+            <p class="mood-subtitle">Кыргызстан — страна на любой вкус</p>
+        </div>
+    </div>
+
+    <!-- РЕКЛАМНЫЙ БЛОК ПАРТНЁРОВ -->
+    <div class="ad-strip-wrap">
+        <div class="ad-strip-header">
+            <span class="ad-strip-title">★ Рекомендуем от партнёров ★</span>
+            <button class="btn-see-all tab-link" data-target="partnership">Стать партнёром →</button>
+        </div>
+        <div class="ad-strip" id="ad-strip">
+            <div class="ad-card ad-card-wide" style="background-image:url('https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1200')">
+                <div class="ad-overlay"></div>
+                <div class="ad-body">
+                    <span class="ad-badge">Реклама</span>
+                    <h4>Sky Restaurant Bishkek</h4>
+                    <p>Ресторан на 24 этаже · Панорамный вид</p>
+                    <span class="ad-promo-tag">−15% по промокоду KGGUIDE</span>
+                </div>
+            </div>
+            <div class="ad-card" style="background-image:url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=800')">
+                <div class="ad-overlay"></div>
+                <div class="ad-body">
+                    <span class="ad-badge">Реклама</span>
+                    <h4>Ala Spa & Wellness</h4>
+                    <p>Спа-комплекс · Массаж · Сауна</p>
+                    <span class="ad-promo-tag">Скидка 20%</span>
+                </div>
+            </div>
+            <div class="ad-card" style="background-image:url('https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=800')">
+                <div class="ad-overlay"></div>
+                <div class="ad-body">
+                    <span class="ad-badge">Реклама</span>
+                    <h4>Tian Shan Heli</h4>
+                    <p>Вертолётные туры · Горы</p>
+                    <span class="ad-promo-tag">−10% апрель</span>
+                </div>
+            </div>
+            <div class="ad-card" style="background-image:url('https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=800')">
+                <div class="ad-overlay"></div>
+                <div class="ad-body">
+                    <span class="ad-badge">Реклама</span>
+                    <h4>Issyk-Kul Yacht Club</h4>
+                    <p>Яхты · Закатные круизы</p>
+                    <span class="ad-promo-tag">Бронь онлайн</span>
+                </div>
+            </div>
+            <div class="ad-card" style="background-image:url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=800')">
+                <div class="ad-overlay"></div>
+                <div class="ad-body">
+                    <span class="ad-badge">Реклама</span>
+                    <h4>Nomad Lounge Bar</h4>
+                    <p>Коктейли · Живая музыка</p>
+                    <span class="ad-promo-tag">Хэппи авер 18:00–20:00</span>
+                </div>
+            </div>
+            <div class="ad-card" style="background-image:url('https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=800')">
+                <div class="ad-overlay"></div>
+                <div class="ad-body">
+                    <span class="ad-badge">Реклама</span>
+                    <h4>Event Hall "Ala-Too"</h4>
+                    <p>Банкеты · Корпоративы · 800 мест</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- СФЕРЫ — BENTO -->
+    <div class="container section-block">
+        <div class="section-head">
+            <div>
+                <h2 class="title-serif">Сферы отдыха</h2>
+                <p class="subtitle">Выбери настроение — найдём идеальное место</p>
+            </div>
+        </div>
+        <div class="bento-grid">
+            <div class="bento-item" data-type="romance" style="background-image:url('https://images.unsplash.com/photo-1516939884455-1445c8652f83?q=80&w=1200')">
+                <div class="bento-overlay"></div>
+                <div class="bento-info">
+                    <span class="bento-num">01</span>
+                    <h3>Романтика</h3>
+                    <p>Свидания для двоих</p>
+                    <div class="bento-arrow">→</div>
+                </div>
+            </div>
+            <div class="bento-item" data-cat="ресторан" style="background-image:url('https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1200')">
+                <div class="bento-overlay"></div>
+                <div class="bento-info">
+                    <span class="bento-num">02</span>
+                    <h3>Гастрономия</h3>
+                    <p>Лучшие рестораны</p>
+                    <div class="bento-arrow">→</div>
+                </div>
+            </div>
+            <div class="bento-item" data-cat="природа" style="background-image:url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1200')">
+                <div class="bento-overlay"></div>
+                <div class="bento-info">
+                    <span class="bento-num">03</span>
+                    <h3>Природа</h3>
+                    <p>Горы, озёра, каньоны</p>
+                    <div class="bento-arrow">→</div>
+                </div>
+            </div>
+            <div class="bento-item" data-type="friends" style="background-image:url('https://images.unsplash.com/photo-1534067783941-51c9c23ecefd?q=80&w=1200')">
+                <div class="bento-overlay"></div>
+                <div class="bento-info">
+                    <span class="bento-num">04</span>
+                    <h3>С друзьями</h3>
+                    <p>День рождения и праздники</p>
+                    <div class="bento-arrow">→</div>
+                </div>
+            </div>
+            <div class="bento-item" data-target="tours" style="background-image:url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=1200')">
+                <div class="bento-overlay"></div>
+                <div class="bento-info">
+                    <span class="bento-num">05</span>
+                    <h3>Экскурсии</h3>
+                    <p>Туры по Кыргызстану</p>
+                    <div class="bento-arrow">→</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ТОП МЕСТ -->
+    <div class="container section-block">
+        <div class="section-head">
+            <div>
+                <h2 class="title-serif">Топ рекомендации</h2>
+                <p class="subtitle">Места с наивысшим рейтингом</p>
+            </div>
+            <button class="btn-see-all tab-link" data-target="places">Все места →</button>
+        </div>
+        <div class="cards-grid" id="featured-grid">
+            <div class="loading-state"><div class="spinner"></div><p>Загружаем...</p></div>
+        </div>
+    </div>
+
+    <!-- НАШИ УСЛУГИ — превью -->
+    <div class="container section-block">
+        <div class="section-head centered-head">
+            <h2 class="title-serif">Что мы предлагаем</h2>
+            <p class="subtitle">Полный спектр услуг для вашего идеального отдыха</p>
+        </div>
+        <div class="services-preview-grid">
+            <div class="sprev-card">
+                <div class="sprev-icon">🗺</div>
+                <h3>Подбор мест</h3>
+                <p>Персональные рекомендации куда сходить — с друзьями, парой или всей семьёй</p>
+            </div>
+            <div class="sprev-card">
+                <div class="sprev-icon">🏕</div>
+                <h3>Туры и экскурсии</h3>
+                <p>Готовые маршруты по Бишкеку, Иссык-Кулю, Ала-Арче и другим уголкам страны</p>
+            </div>
+            <div class="sprev-card">
+                <div class="sprev-icon">🎂</div>
+                <h3>Праздники</h3>
+                <p>Идеи и площадки для дня рождения, корпоративов и особых дат</p>
+            </div>
+            <div class="sprev-card">
+                <div class="sprev-icon">❤️</div>
+                <h3>Романтика</h3>
+                <p>Организация свиданий, пикников, сюрпризов — от простого до эксклюзивного</p>
+            </div>
+        </div>
+        <div class="centered" style="margin-top:40px">
+            <button class="btn-gold tab-link" data-target="services">Все услуги →</button>
+        </div>
+    </div>
+
+    <!-- ПОДПИСКИ — ПРЕВЬЮ -->
+    <div class="container section-block" style="padding-top:0">
+        <div class="subs-preview-box">
+            <h2 class="title-serif">Тарифы & Подписки</h2>
+            <p>Получайте эксклюзивные скидки, промокоды и приоритетное бронирование — выберите тариф под себя</p>
+            <div class="spc-row">
+                <div class="spc tab-link" data-target="subscriptions">
+                    <div class="spc-icon">🎓</div>
+                    <div class="spc-name">Студенческий</div>
+                    <div class="spc-price">199 сом/мес</div>
+                </div>
+                <div class="spc tab-link" data-target="subscriptions">
+                    <div class="spc-icon">❤️</div>
+                    <div class="spc-name">Для влюблённых</div>
+                    <div class="spc-price">499 сом/мес</div>
+                </div>
+                <div class="spc tab-link" data-target="subscriptions">
+                    <div class="spc-icon">👨‍👩‍👧</div>
+                    <div class="spc-name">Семейный</div>
+                    <div class="spc-price">799 сом/мес</div>
+                </div>
+                <div class="spc tab-link" data-target="subscriptions">
+                    <div class="spc-icon">👑</div>
+                    <div class="spc-name">Премиум</div>
+                    <div class="spc-price">1299 сом/мес</div>
+                </div>
+            </div>
+            <button class="btn-gold tab-link" data-target="subscriptions">Выбрать тариф →</button>
+        </div>
+    </div>
+
+</section>
+
+<!-- ─────────────────── PLACES ─────────────────── -->
+<section id="places" class="tab-pane">
+    <div class="container section-block">
+        <div class="section-head">
+            <div>
+                <h2 class="title-serif">Все места</h2>
+                <p class="subtitle" id="places-count">Загружаем...</p>
+            </div>
+        </div>
+        <div class="filters-panel">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Категория</label>
+                    <div class="filter-chips" id="category-chips">
+                        <button class="chip active" data-cat="all">Все</button>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>Тип</label>
+                    <div class="filter-chips">
+                        <button class="chip active" data-type="all">Все</button>
+                        <button class="chip" data-type="romance">❤ Романтика</button>
+                        <button class="chip" data-type="friends">👥 Друзья</button>
+                        <button class="chip" data-type="family">👨‍👩‍👧 Семья</button>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>Город</label>
+                    <select id="city-filter" class="filter-select">
+                        <option value="all">Все города</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="cards-grid" id="places-grid">
+            <div class="loading-state"><div class="spinner"></div><p>Загружаем места...</p></div>
+        </div>
+        <div id="no-results" class="no-results" style="display:none">
+            <span>🏔</span><h3>Ничего не найдено</h3>
+            <p>Попробуйте изменить фильтры</p>
+        </div>
+    </div>
+</section>
+
+<!-- ─────────────────── EVENTS ─────────────────── -->
+<section id="events" class="tab-pane">
+    <div class="container section-block">
+        <div class="section-head">
+            <div>
+                <h2 class="title-serif">События & Акции</h2>
+                <p class="subtitle">Актуальные мероприятия и специальные предложения</p>
+            </div>
+        </div>
+        <div class="events-big-grid">
+            <div class="ebig-card" style="--bg:url('https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=1200')">
+                <div class="ebig-overlay"></div>
+                <div class="ebig-body">
+                    <span class="ebig-tag">🔥 Горячее предложение</span>
+                    <h3>Jazz Night на крыше</h3>
+                    <p>Приватный вечер живого джаза под звёздным небом Бишкека. Ограниченное количество мест. Живая скрипка, саксофон, авторские коктейли.</p>
+                    <div class="ebig-meta">
+                        <span>📅 15 апреля 2026</span>
+                        <span>📍 Бишкек, ул. Чуй 200</span>
+                        <span>💰 3 500 сом</span>
+                    </div>
+                    <button class="btn-gold">Забронировать</button>
+                </div>
+            </div>
+            <div class="ebig-card" style="--bg:url('https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=1200')">
+                <div class="ebig-overlay"></div>
+                <div class="ebig-body">
+                    <span class="ebig-tag">🏔 Скидка 20%</span>
+                    <h3>Heliskiing — Тянь-Шань</h3>
+                    <p>Покоряйте ледники на вертолёте. Профессиональные инструкторы, снаряжение включено. Акция действует весь апрель.</p>
+                    <div class="ebig-meta">
+                        <span>📅 Апрель 2026</span>
+                        <span>📍 Тянь-Шань</span>
+                        <span>💰 от 45 000 сом</span>
+                    </div>
+                    <button class="btn-gold">Записаться</button>
+                </div>
+            </div>
+            <div class="ebig-card" style="--bg:url('https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=1200')">
+                <div class="ebig-overlay"></div>
+                <div class="ebig-body">
+                    <span class="ebig-tag">⛵ Новинка сезона</span>
+                    <h3>Яхта на Иссык-Куле</h3>
+                    <p>Новый маршрут — вечерний круиз на закате с ужином на борту. Идеально для романтических вечеров и компаний.</p>
+                    <div class="ebig-meta">
+                        <span>📅 Май — Сентябрь</span>
+                        <span>📍 Чолпон-Ата</span>
+                        <span>💰 от 8 000 сом</span>
+                    </div>
+                    <button class="btn-gold">Узнать больше</button>
+                </div>
+            </div>
+            <div class="ebig-card" style="--bg:url('https://images.unsplash.com/photo-1550966841-3ee5ad60d0d9?q=80&w=1200')">
+                <div class="ebig-overlay"></div>
+                <div class="ebig-body">
+                    <span class="ebig-tag">🍽 Каждую пятницу</span>
+                    <h3>Chef's Table Experience</h3>
+                    <p>Ужин прямо на кухне ресторана. Шеф готовит 9 курсов специально для вас. Авторское меню меняется каждую неделю.</p>
+                    <div class="ebig-meta">
+                        <span>📅 Каждую пятницу</span>
+                        <span>📍 Бишкек</span>
+                        <span>💰 5 500 сом / чел</span>
+                    </div>
+                    <button class="btn-gold">Записаться</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─────────────────── SERVICES ─────────────────── -->
+<section id="services" class="tab-pane">
+    <div class="container section-block">
+        <div class="section-head centered-head">
+            <h2 class="title-serif">Наши услуги</h2>
+            <p class="subtitle">Всё для идеального отдыха в Кыргызстане</p>
+        </div>
+        <div class="services-list">
+            <div class="srv-row">
+                <div class="srv-icon-wrap">🗺</div>
+                <div class="srv-body">
+                    <h3>Подбор мест</h3>
+                    <p>Персональные рекомендации куда пойти в зависимости от вашего настроения, бюджета и компании. Помогаем найти идеальное место для любого повода.</p>
+                    <div class="srv-tags"><span>С друзьями</span><span>Романтика</span><span>Семья</span></div>
+                </div>
+                <div class="srv-price">Бесплатно</div>
+            </div>
+            <div class="srv-row">
+                <div class="srv-icon-wrap">🏕</div>
+                <div class="srv-body">
+                    <h3>Туры и экскурсии</h3>
+                    <p>Организованные маршруты по самым красивым уголкам страны. Ала-Арча, Иссык-Куль, Сон-Куль, Каракол — с гидом и трансфером.</p>
+                    <div class="srv-tags"><span>Однодневные</span><span>Многодневные</span><span>Групповые</span></div>
+                </div>
+                <div class="srv-price">от 2 500 сом</div>
+            </div>
+            <div class="srv-row">
+                <div class="srv-icon-wrap">🎂</div>
+                <div class="srv-body">
+                    <h3>Праздники и события</h3>
+                    <p>Организация дней рождения, корпоративов, свадеб и других особых дат. Подбор площадки, декор, кейтеринг — берём на себя.</p>
+                    <div class="srv-tags"><span>День рождения</span><span>Корпоратив</span><span>Свадьба</span></div>
+                </div>
+                <div class="srv-price">от 15 000 сом</div>
+            </div>
+            <div class="srv-row">
+                <div class="srv-icon-wrap">❤️</div>
+                <div class="srv-body">
+                    <h3>Романтические свидания</h3>
+                    <p>Организация незабываемых вечеров — пикник на крыше, ужин под звёздами, прогулки на лошадях в горах. Всё включено.</p>
+                    <div class="srv-tags"><span>Пикник</span><span>Ужин</span><span>Приключение</span></div>
+                </div>
+                <div class="srv-price">от 8 000 сом</div>
+            </div>
+            <div class="srv-row">
+                <div class="srv-icon-wrap">🏔</div>
+                <div class="srv-body">
+                    <h3>Активный отдых</h3>
+                    <p>Треккинг, конные прогулки, рафтинг, альпинизм, хелискиинг. Снаряжение, инструктор, страховка — всё включено в стоимость.</p>
+                    <div class="srv-tags"><span>Треккинг</span><span>Рафтинг</span><span>Горы</span></div>
+                </div>
+                <div class="srv-price">от 5 000 сом</div>
+            </div>
+        </div>
+
+        <!-- Форма заявки -->
+        <div class="booking-form-wrap" id="booking-section">
+            <h3 class="title-serif" style="font-size:32px;margin-bottom:10px">Оставить заявку</h3>
+            <p class="subtitle" style="margin-bottom:30px">Опишите что вам нужно — свяжемся в течение часа</p>
+            <div class="booking-form">
+                <div class="bf-row">
+                    <div class="bf-field"><label>Имя</label><input type="text" placeholder="Ваше имя" id="bf-name"></div>
+                    <div class="bf-field"><label>Телефон / Telegram</label><input type="text" placeholder="+996 — — —" id="bf-phone"></div>
+                </div>
+                <div class="bf-field full">
+                    <label>Тип услуги</label>
+                    <select id="bf-type">
+                        <option>Подбор мест</option>
+                        <option>Тур / Экскурсия</option>
+                        <option>Праздник / День рождения</option>
+                        <option>Романтическое свидание</option>
+                        <option>Активный отдых</option>
+                        <option>Другое</option>
+                    </select>
+                </div>
+                <div class="bf-field full">
+                    <label>Детали и пожелания</label>
+                    <textarea placeholder="Расскажите подробнее — дата, количество человек, бюджет..." id="bf-msg"></textarea>
+                </div>
+                <button class="btn-gold" id="bf-submit">Отправить заявку</button>
+                <div id="bf-result"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─────────────────── TOURS ─────────────────── -->
+<section id="tours" class="tab-pane">
+    <div class="container section-block">
+        <div class="section-head centered-head">
+            <h2 class="title-serif">Туры & Экскурсии</h2>
+            <p class="subtitle">Откройте Кыргызстан с нашими гидами</p>
+        </div>
+        <div class="tours-grid">
+            <div class="tour-card">
+                <div class="tour-img" style="background-image:url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=800')">
+                    <span class="tour-badge">1 день</span>
+                </div>
+                <div class="tour-body">
+                    <h3>Ала-Арча — Горный день</h3>
+                    <p>Треккинг по живописным ущельям в 40 км от Бишкека. Водопады, альпийские луга, горные виды.</p>
+                    <div class="tour-meta">
+                        <span>👥 2–15 человек</span>
+                        <span>🚌 Трансфер включён</span>
+                    </div>
+                    <div class="tour-footer">
+                        <span class="tour-price">2 500 сом</span>
+                        <button class="btn-gold" onclick="switchTab('services')">Записаться</button>
+                    </div>
+                </div>
+            </div>
+            <div class="tour-card">
+                <div class="tour-img" style="background-image:url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=800')">
+                    <span class="tour-badge">3 дня</span>
+                </div>
+                <div class="tour-body">
+                    <h3>Иссык-Куль — Пляжный тур</h3>
+                    <p>Три дня на жемчужине Кыргызстана. Пляж, прогулки, местная кухня и закат над озером.</p>
+                    <div class="tour-meta">
+                        <span>👥 2–20 человек</span>
+                        <span>🏨 Отель включён</span>
+                    </div>
+                    <div class="tour-footer">
+                        <span class="tour-price">12 000 сом</span>
+                        <button class="btn-gold" onclick="switchTab('services')">Записаться</button>
+                    </div>
+                </div>
+            </div>
+            <div class="tour-card">
+                <div class="tour-img" style="background-image:url('https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=800')">
+                    <span class="tour-badge">2 дня</span>
+                </div>
+                <div class="tour-body">
+                    <h3>Конорчек & Боомское ущелье</h3>
+                    <p>«Кыргызский Марс» — красные каньоны и марсианские пейзажи. Ночёвка в юрточном лагере.</p>
+                    <div class="tour-meta">
+                        <span>👥 2–10 человек</span>
+                        <span>🏕 Юрта включена</span>
+                    </div>
+                    <div class="tour-footer">
+                        <span class="tour-price">7 500 сом</span>
+                        <button class="btn-gold" onclick="switchTab('services')">Записаться</button>
+                    </div>
+                </div>
+            </div>
+            <div class="tour-card">
+                <div class="tour-img" style="background-image:url('https://images.unsplash.com/photo-1501854140801-50d01698950b?q=80&w=800')">
+                    <span class="tour-badge">5 дней</span>
+                </div>
+                <div class="tour-body">
+                    <h3>Сон-Куль — Небесное пастбище</h3>
+                    <p>Высокогорное озеро на 3016м. Юрты, лошади, кочевой быт и невероятное звёздное небо.</p>
+                    <div class="tour-meta">
+                        <span>👥 2–12 человек</span>
+                        <span>🐴 Лошади включены</span>
+                    </div>
+                    <div class="tour-footer">
+                        <span class="tour-price">22 000 сом</span>
+                        <button class="btn-gold" onclick="switchTab('services')">Записаться</button>
+                    </div>
+                </div>
+            </div>
+            <div class="tour-card">
+                <div class="tour-img" style="background-image:url('https://images.unsplash.com/photo-1534067783941-51c9c23ecefd?q=80&w=800')">
+                    <span class="tour-badge">1 день</span>
+                </div>
+                <div class="tour-body">
+                    <h3>Каракол — Горный город</h3>
+                    <p>Живописный городок у подножия Тянь-Шаня. Рынок, мечеть, православная церковь, дунганский плов.</p>
+                    <div class="tour-meta">
+                        <span>👥 2–20 человек</span>
+                        <span>🚌 Микроавтобус</span>
+                    </div>
+                    <div class="tour-footer">
+                        <span class="tour-price">4 000 сом</span>
+                        <button class="btn-gold" onclick="switchTab('services')">Записаться</button>
+                    </div>
+                </div>
+            </div>
+            <div class="tour-card">
+                <div class="tour-img" style="background-image:url('https://images.unsplash.com/photo-1578662996442-48f60103fc96?q=80&w=800')">
+                    <span class="tour-badge">0.5 дня</span>
+                </div>
+                <div class="tour-body">
+                    <h3>Бишкек City Tour</h3>
+                    <p>Обзорная экскурсия по столице. Площадь Ала-Тоо, Ошский базар, парки, архитектура советской эпохи.</p>
+                    <div class="tour-meta">
+                        <span>👥 1–30 человек</span>
+                        <span>🎤 Гид включён</span>
+                    </div>
+                    <div class="tour-footer">
+                        <span class="tour-price">1 500 сом</span>
+                        <button class="btn-gold" onclick="switchTab('services')">Записаться</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─────────────────── FAVORITES ─────────────────── -->
+<section id="favorites" class="tab-pane">
+    <div class="container section-block">
+        <div class="section-head">
+            <div>
+                <h2 class="title-serif">❤ Избранное</h2>
+                <p class="subtitle" id="fav-subtitle">Сохранённые места</p>
+            </div>
+        </div>
+        <div class="cards-grid" id="favorites-grid">
+            <div class="empty-state">
+                <span>🗺</span>
+                <h3>Список пуст</h3>
+                <p>Нажмите ❤ на карточке, чтобы добавить в избранное</p>
+                <button class="btn-gold tab-link" data-target="places">Найти места</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─────────────────── SHOP ─────────────────── -->
+<section id="shop" class="tab-pane">
+    <div class="container section-block">
+
+        <!-- Шапка магазина -->
+        <div class="shop-header-block">
+            <div class="shop-header-content">
+                <h2 class="title-serif">Магазин KG Guide</h2>
+                <p>Эксклюзивные товары — цветы, косметика, подарки и сувениры. Всё создано с любовью к Кыргызстану.</p>
+                <div style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap">
+                    <div class="shop-addr-badge">📍 <span>Бишкек, ул. Московская 168</span> · Скоро открытие</div>
+                    <div class="shop-addr-badge">🚚 <span>Доставка по всему Бишкеку</span> · от 150 сом</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Промокоды -->
+        <div class="promos-bar">
+            <div class="promos-bar-left">
+                <h3>🎁 Активные промокоды</h3>
+                <p>Нажмите на код, чтобы скопировать. Применяйте при оформлении заказа.</p>
+            </div>
+            <div class="promos-bar-codes">
+                <div>
+                    <div class="promo-chip" onclick="copyPromo('STUDENT10',this)">STUDENT10</div>
+                    <span class="promo-chip-label">−10% для студентов</span>
+                </div>
+                <div>
+                    <div class="promo-chip" onclick="copyPromo('LOVE15',this)">LOVE15</div>
+                    <span class="promo-chip-label">−15% для пар</span>
+                </div>
+                <div>
+                    <div class="promo-chip" onclick="copyPromo('KG2026',this)">KG2026</div>
+                    <span class="promo-chip-label">−20% новым клиентам</span>
+                </div>
+                <div>
+                    <div class="promo-chip" onclick="copyPromo('FAMILY20',this)">FAMILY20</div>
+                    <span class="promo-chip-label">−20% для семей</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Фильтр категорий -->
+        <div class="shop-filter-bar">
+            <span class="shop-filter-label">Категория:</span>
+            <button class="chip active" data-shop-cat="all">Все</button>
+            <button class="chip" data-shop-cat="flowers">💐 Цветы</button>
+            <button class="chip" data-shop-cat="mugs">☕ Кружки & Термосы</button>
+            <button class="chip" data-shop-cat="cosmetics">💄 Косметика</button>
+            <button class="chip" data-shop-cat="haircare">🧴 Уход за волосами</button>
+            <button class="chip" data-shop-cat="gifts">🎁 Подарки</button>
+        </div>
+
+        <!-- Товары -->
+        <div class="shop-grid" id="shop-grid">
+
+            <div class="product-card" data-shop-cat="flowers">
+                <div class="product-img-wrap">
+                    <img class="product-img" src="https://images.unsplash.com/photo-1487530811176-3780de880c2d?q=80&w=600" alt="Букет роз">
+                    <span class="product-badge badge-hit">Хит</span>
+                    <button class="product-fav-btn">🤍</button>
+                </div>
+                <div class="product-body">
+                    <div class="product-cat">💐 Цветы</div>
+                    <div class="product-name">Букет «Розовая нежность»</div>
+                    <div class="product-desc">25 премиальных роз, упаковка в крафт + атласная лента. Идеально для свидания.</div>
+                </div>
+                <div class="product-footer">
+                    <div class="product-price"><span class="price-current">2 500 сом</span></div>
+                    <button class="btn-cart" onclick="addToCart(this,'Букет «Розовая нежность»',2500)">В корзину</button>
+                </div>
+            </div>
+
+            <div class="product-card" data-shop-cat="flowers">
+                <div class="product-img-wrap">
+                    <img class="product-img" src="https://images.unsplash.com/photo-1561128290-90571e8ef52a?q=80&w=600" alt="Полевые цветы">
+                    <span class="product-badge badge-new">Новинка</span>
+                    <button class="product-fav-btn">🤍</button>
+                </div>
+                <div class="product-body">
+                    <div class="product-cat">💐 Цветы</div>
+                    <div class="product-name">Букет «Горные луга»</div>
+                    <div class="product-desc">Полевые цветы Тянь-Шаня в деревенском стиле. Живой и ароматный.</div>
+                </div>
+                <div class="product-footer">
+                    <div class="product-price"><span class="price-current">1 200 сом</span></div>
+                    <button class="btn-cart" onclick="addToCart(this,'Букет «Горные луга»',1200)">В корзину</button>
+                </div>
+            </div>
+
+            <div class="product-card" data-shop-cat="mugs">
+                <div class="product-img-wrap">
+                    <img class="product-img" src="https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?q=80&w=600" alt="Кружка KG Guide">
+                    <span class="product-badge badge-hit">Хит</span>
+                    <button class="product-fav-btn">🤍</button>
+                </div>
+                <div class="product-body">
+                    <div class="product-cat">☕ Кружки</div>
+                    <div class="product-name">Кружка «KG Guide»</div>
+                    <div class="product-desc">Матовая керамика, объём 350мл. Логотип нанесён методом шелкографии. Для настоящих путешественников.</div>
+                </div>
+                <div class="product-footer">
+                    <div class="product-price">
+                        <span class="price-current">650 сом</span>
+                        <span class="price-old">850 сом</span>
+                    </div>
+                    <button class="btn-cart" onclick="addToCart(this,'Кружка «KG Guide»',650)">В корзину</button>
+                </div>
+            </div>
+
+            <div class="product-card" data-shop-cat="mugs">
+                <div class="product-img-wrap">
+                    <img class="product-img" src="https://images.unsplash.com/photo-1577937927133-66ef06acdf18?q=80&w=600" alt="Термос">
+                    <button class="product-fav-btn">🤍</button>
+                </div>
+                <div class="product-body">
+                    <div class="product-cat">☕ Термосы</div>
+                    <div class="product-name">Термос «Иссык-Куль»</div>
+                    <div class="product-desc">Нержавеющая сталь, 500мл. Держит температуру 12 часов. Гравировка KG Guide.</div>
+                </div>
+                <div class="product-footer">
+                    <div class="product-price"><span class="price-current">1 450 сом</span></div>
+                    <button class="btn-cart" onclick="addToCart(this,'Термос «Иссык-Куль»',1450)">В корзину</button>
+                </div>
+            </div>
+
+            <div class="product-card" data-shop-cat="cosmetics">
+                <div class="product-img-wrap">
+                    <img class="product-img" src="https://images.unsplash.com/photo-1570194065650-d99fb4b8ccb0?q=80&w=600" alt="Крем">
+                    <span class="product-badge badge-new">Новинка</span>
+                    <button class="product-fav-btn">🤍</button>
+                </div>
+                <div class="product-body">
+                    <div class="product-cat">💄 Косметика</div>
+                    <div class="product-name">Крем «Розовая вода»</div>
+                    <div class="product-desc">Увлажняющий крем для лица с экстрактом алтайских трав и розовой водой. 50мл.</div>
+                </div>
+                <div class="product-footer">
+                    <div class="product-price"><span class="price-current">1 800 сом</span></div>
+                    <button class="btn-cart" onclick="addToCart(this,'Крем «Розовая вода»',1800)">В корзину</button>
+                </div>
+            </div>
+
+            <div class="product-card" data-shop-cat="cosmetics">
+                <div class="product-img-wrap">
+                    <img class="product-img" src="https://images.unsplash.com/photo-1596462502278-27bfdc403348?q=80&w=600" alt="Набор косметики">
+                    <span class="product-badge badge-sale">−25%</span>
+                    <button class="product-fav-btn">🤍</button>
+                </div>
+                <div class="product-body">
+                    <div class="product-cat">💄 Косметика</div>
+                    <div class="product-name">Подарочный набор «Горная SPA»</div>
+                    <div class="product-desc">Крем + маска + скраб. Всё натуральное. Отличный подарок на любой повод.</div>
+                </div>
+                <div class="product-footer">
+                    <div class="product-price">
+                        <span class="price-current">3 800 сом</span>
+                        <span class="price-old">5 100 сом</span>
+                    </div>
+                    <button class="btn-cart" onclick="addToCart(this,'Набор «Горная SPA»',3800)">В корзину</button>
+                </div>
+            </div>
+
+            <div class="product-card" data-shop-cat="haircare">
+                <div class="product-img-wrap">
+                    <img class="product-img" src="https://images.unsplash.com/photo-1526947425960-945c6e72858f?q=80&w=600" alt="Шампунь">
+                    <button class="product-fav-btn">🤍</button>
+                </div>
+                <div class="product-body">
+                    <div class="product-cat">🧴 Уход за волосами</div>
+                    <div class="product-name">Шампунь «Горные травы»</div>
+                    <div class="product-desc">Натуральный шампунь с экстрактом облепихи и ромашки. Без SLS и парабенов. 250мл.</div>
+                </div>
+                <div class="product-footer">
+                    <div class="product-price"><span class="price-current">950 сом</span></div>
+                    <button class="btn-cart" onclick="addToCart(this,'Шампунь «Горные травы»',950)">В корзину</button>
+                </div>
+            </div>
+
+            <div class="product-card" data-shop-cat="haircare">
+                <div class="product-img-wrap">
+                    <img class="product-img" src="https://images.unsplash.com/photo-1571781926291-c477ebfd024b?q=80&w=600" alt="Маска">
+                    <span class="product-badge badge-new">Новинка</span>
+                    <button class="product-fav-btn">🤍</button>
+                </div>
+                <div class="product-body">
+                    <div class="product-cat">🧴 Уход за волосами</div>
+                    <div class="product-name">Маска «Арган & Кератин»</div>
+                    <div class="product-desc">Восстанавливающая маска для волос с аргановым маслом. Интенсивное питание. 200мл.</div>
+                </div>
+                <div class="product-footer">
+                    <div class="product-price"><span class="price-current">1 200 сом</span></div>
+                    <button class="btn-cart" onclick="addToCart(this,'Маска «Арган & Кератин»',1200)">В корзину</button>
+                </div>
+            </div>
+
+            <div class="product-card" data-shop-cat="gifts">
+                <div class="product-img-wrap">
+                    <img class="product-img" src="https://images.unsplash.com/photo-1602607144878-29e698e2d1ab?q=80&w=600" alt="Свеча">
+                    <span class="product-badge badge-hit">Хит</span>
+                    <button class="product-fav-btn">🤍</button>
+                </div>
+                <div class="product-body">
+                    <div class="product-cat">🎁 Подарки</div>
+                    <div class="product-name">Свеча «Тянь-Шань»</div>
+                    <div class="product-desc">Соевая свеча ручной работы с ароматом горных трав и кедра. Горение 45 часов.</div>
+                </div>
+                <div class="product-footer">
+                    <div class="product-price"><span class="price-current">1 100 сом</span></div>
+                    <button class="btn-cart" onclick="addToCart(this,'Свеча «Тянь-Шань»',1100)">В корзину</button>
+                </div>
+            </div>
+
+            <div class="product-card" data-shop-cat="gifts">
+                <div class="product-img-wrap">
+                    <img class="product-img" src="https://images.unsplash.com/photo-1541643600914-78b084683702?q=80&w=600" alt="Духи">
+                    <button class="product-fav-btn">🤍</button>
+                </div>
+                <div class="product-body">
+                    <div class="product-cat">🎁 Подарки</div>
+                    <div class="product-name">Духи «Иссык-Куль»</div>
+                    <div class="product-desc">Авторский аромат, вдохновлённый природой Кыргызстана. Ноты хризантемы, можжевельника и мускуса. 50мл.</div>
+                </div>
+                <div class="product-footer">
+                    <div class="product-price"><span class="price-current">4 500 сом</span></div>
+                    <button class="btn-cart" onclick="addToCart(this,'Духи «Иссык-Куль»',4500)">В корзину</button>
+                </div>
+            </div>
+
+            <div class="product-card" data-shop-cat="cosmetics">
+                <div class="product-img-wrap">
+                    <img class="product-img" src="https://images.unsplash.com/photo-1556228578-8c89e6adf883?q=80&w=600" alt="Скраб">
+                    <span class="product-badge badge-sale">−15%</span>
+                    <button class="product-fav-btn">🤍</button>
+                </div>
+                <div class="product-body">
+                    <div class="product-cat">💄 Косметика</div>
+                    <div class="product-name">Скраб «Морская соль & Мёд»</div>
+                    <div class="product-desc">Отшелушивающий скраб для тела на основе натуральных компонентов. 300г.</div>
+                </div>
+                <div class="product-footer">
+                    <div class="product-price">
+                        <span class="price-current">1 360 сом</span>
+                        <span class="price-old">1 600 сом</span>
+                    </div>
+                    <button class="btn-cart" onclick="addToCart(this,'Скраб «Морская соль & Мёд»',1360)">В корзину</button>
+                </div>
+            </div>
+
+            <div class="product-card" data-shop-cat="flowers">
+                <div class="product-img-wrap">
+                    <img class="product-img" src="https://images.unsplash.com/photo-1525310072745-f49212b5ac6d?q=80&w=600" alt="Тюльпаны">
+                    <button class="product-fav-btn">🤍</button>
+                </div>
+                <div class="product-body">
+                    <div class="product-cat">💐 Цветы</div>
+                    <div class="product-name">Тюльпаны «Нежность»</div>
+                    <div class="product-desc">15 свежих тюльпанов в фирменной упаковке. Быстрая доставка по городу.</div>
+                </div>
+                <div class="product-footer">
+                    <div class="product-price"><span class="price-current">1 800 сом</span></div>
+                    <button class="btn-cart" onclick="addToCart(this,'Тюльпаны «Нежность»',1800)">В корзину</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ─────────────────── SUBSCRIPTIONS ─────────────────── -->
+<section id="subscriptions" class="tab-pane">
+    <div class="container section-block">
+        <div class="section-head centered-head">
+            <h2 class="title-serif">Тарифы & Подписки</h2>
+            <p class="subtitle">Выбери план — получай скидки, промокоды и эксклюзивный доступ</p>
+        </div>
+
+        <div class="plans-grid">
+            <!-- Бесплатный -->
+            <div class="plan-card">
+                <div class="plan-icon">🌿</div>
+                <div class="plan-name">Базовый</div>
+                <div class="plan-tagline">Для первого знакомства с KG Guide</div>
+                <div class="plan-price"><span class="plan-free-text">Бесплатно</span></div>
+                <ul class="plan-features">
+                    <li>Поиск и каталог мест</li>
+                    <li>Карточки с адресами</li>
+                    <li>3 места в избранном</li>
+                    <li class="no">Промокоды на скидки</li>
+                    <li class="no">Приоритетное бронирование</li>
+                    <li class="no">Персональный менеджер</li>
+                </ul>
+                <button class="btn-plan">Начать бесплатно</button>
+            </div>
+
+            <!-- Студенческий -->
+            <div class="plan-card">
+                <div class="plan-icon">🎓</div>
+                <div class="plan-name">Студенческий</div>
+                <div class="plan-tagline">Для студентов всех ВУЗов Кыргызстана</div>
+                <div class="plan-price">
+                    <span class="plan-price-val">199</span>
+                    <span class="plan-price-period"> сом/мес</span>
+                </div>
+                <ul class="plan-features">
+                    <li>Всё из Базового</li>
+                    <li>Скидка 10% на услуги</li>
+                    <li>Промокод STUDENT10</li>
+                    <li>Неограниченное избранное</li>
+                    <li>Приоритет в поддержке</li>
+                    <li class="no">Персональный менеджер</li>
+                </ul>
+                <button class="btn-plan" onclick="showPlanModal('Студенческий')">Выбрать тариф</button>
+            </div>
+
+            <!-- Влюблённые - Popular -->
+            <div class="plan-card plan-featured">
+                <div class="plan-popular-badge">Популярное</div>
+                <div class="plan-icon">❤️</div>
+                <div class="plan-name">Для влюблённых</div>
+                <div class="plan-tagline">Романтика без компромиссов — для двоих</div>
+                <div class="plan-price">
+                    <span class="plan-price-val">499</span>
+                    <span class="plan-price-period"> сом/мес</span>
+                </div>
+                <ul class="plan-features">
+                    <li>2 аккаунта в одном</li>
+                    <li>Скидка 15% на услуги</li>
+                    <li>Промокод LOVE15</li>
+                    <li>Романтические рекомендации</li>
+                    <li>Приоритетное бронирование</li>
+                    <li>Скидки в магазине −15%</li>
+                </ul>
+                <button class="btn-plan" onclick="showPlanModal('Для влюблённых')">Выбрать тариф</button>
+            </div>
+
+            <!-- Семейный -->
+            <div class="plan-card">
+                <div class="plan-icon">👨‍👩‍👧</div>
+                <div class="plan-name">Семейный</div>
+                <div class="plan-tagline">До 4 аккаунтов под одной подпиской</div>
+                <div class="plan-price">
+                    <span class="plan-price-val">799</span>
+                    <span class="plan-price-period"> сом/мес</span>
+                </div>
+                <ul class="plan-features">
+                    <li>4 аккаунта</li>
+                    <li>Скидка 20% на все услуги</li>
+                    <li>Промокод FAMILY20</li>
+                    <li>Семейные маршруты</li>
+                    <li>Скидки в магазине −20%</li>
+                    <li class="no">Персональный менеджер</li>
+                </ul>
+                <button class="btn-plan" onclick="showPlanModal('Семейный')">Выбрать тариф</button>
+            </div>
+
+            <!-- Премиум -->
+            <div class="plan-card">
+                <div class="plan-icon">👑</div>
+                <div class="plan-name">Премиум</div>
+                <div class="plan-tagline">Максимум привилегий для ценителей</div>
+                <div class="plan-price">
+                    <span class="plan-price-val">1 299</span>
+                    <span class="plan-price-period"> сом/мес</span>
+                </div>
+                <ul class="plan-features">
+                    <li>Все функции</li>
+                    <li>Скидка 30% на услуги</li>
+                    <li>Все промокоды</li>
+                    <li>Персональный менеджер 24/7</li>
+                    <li>Ранний доступ к событиям</li>
+                    <li>Бесплатная доставка из магазина</li>
+                </ul>
+                <button class="btn-plan" onclick="showPlanModal('Премиум')">Выбрать тариф</button>
+            </div>
+        </div>
+
+        <!-- Активные промокоды -->
+        <div class="section-head">
+            <div>
+                <h2 class="title-serif">Активные промокоды</h2>
+                <p class="subtitle">Нажмите на код, чтобы скопировать</p>
+            </div>
+        </div>
+        <div class="active-promos-grid">
+            <div class="active-promo-tile">
+                <div class="apt-icon">🎓</div>
+                <div class="apt-name">Студентам</div>
+                <div class="apt-code" onclick="copyPromo('STUDENT10',this)">STUDENT10</div>
+                <div class="apt-desc">−10% на все услуги и товары магазина. Требуется студенческий билет при встрече.</div>
+            </div>
+            <div class="active-promo-tile">
+                <div class="apt-icon">❤️</div>
+                <div class="apt-name">Для влюблённых</div>
+                <div class="apt-code" onclick="copyPromo('LOVE15',this)">LOVE15</div>
+                <div class="apt-desc">−15% на романтические туры, свидания и товары. Действует бессрочно для пар.</div>
+            </div>
+            <div class="active-promo-tile">
+                <div class="apt-icon">🌟</div>
+                <div class="apt-name">Новый клиент</div>
+                <div class="apt-code" onclick="copyPromo('KG2026',this)">KG2026</div>
+                <div class="apt-desc">−20% на первый заказ в магазине или первую услугу. Одноразовый промокод.</div>
+            </div>
+            <div class="active-promo-tile">
+                <div class="apt-icon">👨‍👩‍👧</div>
+                <div class="apt-name">Семейная акция</div>
+                <div class="apt-code" onclick="copyPromo('FAMILY20',this)">FAMILY20</div>
+                <div class="apt-desc">−20% при заказе от 3 персон. Идеально для семейных поездок и праздников.</div>
+            </div>
+            <div class="active-promo-tile">
+                <div class="apt-icon">🎂</div>
+                <div class="apt-name">День рождения</div>
+                <div class="apt-code" onclick="copyPromo('BDAY25',this)">BDAY25</div>
+                <div class="apt-desc">−25% в день рождения и 3 дня после. Подтверждение через профиль или документ.</div>
+            </div>
+            <div class="active-promo-tile">
+                <div class="apt-icon">🏔</div>
+                <div class="apt-name">Апрель — горы</div>
+                <div class="apt-code" onclick="copyPromo('APRIL30',this)">APRIL30</div>
+                <div class="apt-desc">−30% на горные туры в апреле. Ограниченное время.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─────────────────── PARTNERSHIP ─────────────────── -->
+<section id="partnership" class="tab-pane">
+    <div class="container section-block">
+        <div class="section-head centered-head">
+            <h2 class="title-serif">Партнёрство</h2>
+            <p class="subtitle">Развивайте бизнес вместе с KG Guide — тысячи клиентов уже с нами</p>
+        </div>
+
+        <div class="partner-intro">
+            <p>KG Guide — ведущая платформа рекомендаций в Кыргызстане. Размещайте рекламу, привлекайте клиентов и выходите на новый уровень. Мы предлагаем прозрачные условия сотрудничества и реальный результат.</p>
+        </div>
+
+        <!-- Почему мы -->
+        <div class="partner-why-grid">
+            <div class="partner-why-card">
+                <div class="partner-why-icon">👥</div>
+                <h4>Большая аудитория</h4>
+                <p>Тысячи активных пользователей ежедневно ищут места для отдыха через KG Guide</p>
+            </div>
+            <div class="partner-why-card">
+                <div class="partner-why-icon">🎯</div>
+                <h4>Целевой трафик</h4>
+                <p>Только платёжеспособная аудитория, готовая тратить на отдых и развлечения</p>
+            </div>
+            <div class="partner-why-card">
+                <div class="partner-why-icon">📊</div>
+                <h4>Аналитика</h4>
+                <p>Подробная статистика просмотров, кликов и конверсии в вашем личном кабинете</p>
+            </div>
+            <div class="partner-why-card">
+                <div class="partner-why-icon">💰</div>
+                <h4>Гибкие тарифы</h4>
+                <p>От 3 000 сом/мес за базовое размещение до полного брендинга платформы</p>
+            </div>
+            <div class="partner-why-card">
+                <div class="partner-why-icon">🤝</div>
+                <h4>Персональный подход</h4>
+                <p>Менеджер помогает настроить кампанию и оптимизировать результаты</p>
+            </div>
+            <div class="partner-why-card">
+                <div class="partner-why-icon">🚀</div>
+                <h4>Быстрый старт</h4>
+                <p>Запуск рекламной кампании за 24 часа после подписания договора</p>
+            </div>
+        </div>
+
+        <!-- Типы партнёров -->
+        <h3 class="partner-types-title">Кто уже с нами</h3>
+        <div class="partner-types-grid">
+            <div class="partner-type-card">
+                <div class="pt-icon">🍽</div>
+                <div class="pt-body">
+                    <h4>Рестораны & Кафе</h4>
+                    <p>Размещение в каталоге, приоритетные позиции, акции и скидки для пользователей</p>
+                </div>
+            </div>
+            <div class="partner-type-card">
+                <div class="pt-icon">🏨</div>
+                <div class="pt-body">
+                    <h4>Отели & Гостиницы</h4>
+                    <p>Бронирование через платформу, интеграция с вашей CMS, рекламные блоки</p>
+                </div>
+            </div>
+            <div class="partner-type-card">
+                <div class="pt-icon">🚚</div>
+                <div class="pt-body">
+                    <h4>Службы доставки</h4>
+                    <p>Логистика для нашего магазина, реклама в приложении, эксклюзивные условия</p>
+                </div>
+            </div>
+            <div class="partner-type-card">
+                <div class="pt-icon">📸</div>
+                <div class="pt-body">
+                    <h4>Фотографы & Видеографы</h4>
+                    <p>Съёмка свиданий, туров и событий. Продвижение портфолио через платформу</p>
+                </div>
+            </div>
+            <div class="partner-type-card">
+                <div class="pt-icon">🎭</div>
+                <div class="pt-body">
+                    <h4>Event-агентства</h4>
+                    <p>Размещение мероприятий, совместные акции, продажа билетов через KG Guide</p>
+                </div>
+            </div>
+            <div class="partner-type-card">
+                <div class="pt-icon">🚌</div>
+                <div class="pt-body">
+                    <h4>Транспортные компании</h4>
+                    <p>Трансфер для туристов, интеграция в туры, реклама в разделе Туры</p>
+                </div>
+            </div>
+            <div class="partner-type-card">
+                <div class="pt-icon">🌿</div>
+                <div class="pt-body">
+                    <h4>SPA & Wellness</h4>
+                    <p>Продвижение в категории «Отдых», промокоды для подписчиков KG Guide</p>
+                </div>
+            </div>
+            <div class="partner-type-card">
+                <div class="pt-icon">🛒</div>
+                <div class="pt-body">
+                    <h4>Поставщики товаров</h4>
+                    <p>Продажа через наш магазин, совместный брендинг, эксклюзивные коллекции</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Форма -->
+        <div class="partner-form-box">
+            <h3>Оставить заявку</h3>
+            <p>Заполните форму — наш менеджер свяжется в течение 2 часов</p>
+            <div class="partner-form">
+                <div class="pf-field">
+                    <label>Название компании</label>
+                    <input type="text" id="pf-company" placeholder="ООО «Название»">
+                </div>
+                <div class="pf-field">
+                    <label>Контактное лицо</label>
+                    <input type="text" id="pf-name" placeholder="Имя Фамилия">
+                </div>
+                <div class="pf-field">
+                    <label>Телефон / Telegram</label>
+                    <input type="text" id="pf-phone" placeholder="+996 700 000 000">
+                </div>
+                <div class="pf-field">
+                    <label>Email</label>
+                    <input type="email" id="pf-email" placeholder="company@email.com">
+                </div>
+                <div class="pf-field full">
+                    <label>Тип партнёрства</label>
+                    <select id="pf-type">
+                        <option>Реклама в каталоге мест</option>
+                        <option>Размещение в магазине KG</option>
+                        <option>Служба доставки</option>
+                        <option>Event-партнёрство</option>
+                        <option>Транспортные услуги</option>
+                        <option>Совместная акция / промокод</option>
+                        <option>Другое</option>
+                    </select>
+                </div>
+                <div class="pf-field full">
+                    <label>Краткое описание</label>
+                    <textarea id="pf-msg" placeholder="Расскажите о вашей компании и чём вы хотите сотрудничать..."></textarea>
+                </div>
+                <div class="pf-field full">
+                    <button class="btn-gold" id="pf-submit" style="width:fit-content">Отправить заявку</button>
+                    <div id="pf-result" style="margin-top:14px;font-size:13px;color:var(--gold)"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- МОДАЛКА МЕСТА -->
+<div class="modal-overlay" id="place-overlay">
+    <div class="place-modal" id="place-modal">
+        <button class="modal-close" id="place-modal-close">&times;</button>
+        <div id="place-modal-body"></div>
+    </div>
+</div>
+
+</main>
+
+<!-- CART FAB -->
+<button class="cart-fab" id="cart-fab" onclick="openCartModal()">🛒 Корзина · <span id="cart-total-display">0 сом</span></button>
+
+<!-- FOOTER -->
+<footer>
+    <div class="container footer-inner">
+        <div class="footer-brand">
+            <div class="logo">KG<span>Guide</span></div>
+            <p>Лучший путеводитель по Кыргызстану — места, туры, события.</p>
+            <div class="socials">
+                <a href="#">Instagram</a>
+                <a href="#">Telegram</a>
+                <a href="#">WhatsApp</a>
+            </div>
+        </div>
+        <div class="footer-cols">
+            <div class="f-col">
+                <h4>Навигация</h4>
+                <a href="#" class="tab-link" data-target="home">Главная</a>
+                <a href="#" class="tab-link" data-target="places">Места</a>
+                <a href="#" class="tab-link" data-target="events">События</a>
+                <a href="#" class="tab-link" data-target="tours">Туры</a>
+                <a href="#" class="tab-link" data-target="services">Услуги</a>
+            </div>
+            <div class="f-col">
+                <h4>Категории</h4>
+                <a href="#" class="tab-link cat-link" data-target="places" data-cat="природа">Природа</a>
+                <a href="#" class="tab-link cat-link" data-target="places" data-cat="кафе">Кафе</a>
+                <a href="#" class="tab-link cat-link" data-target="places" data-cat="ресторан">Рестораны</a>
+                <a href="#" class="tab-link cat-link" data-target="places" data-cat="подарки">Подарки</a>
+            </div>
+            <div class="f-col">
+                <h4>Сервисы</h4>
+                <a href="#" class="tab-link" data-target="shop">🛍 Магазин KG</a>
+                <a href="#" class="tab-link" data-target="subscriptions">⭐ Подписки</a>
+                <a href="#" class="tab-link" data-target="partnership">🤝 Партнёрство</a>
+                <a href="#" class="tab-link" data-target="favorites">❤️ Избранное</a>
+            </div>
+            <div class="f-col">
+                <h4>Контакты</h4>
+                <a href="#">+996 XXX XXX XXX</a>
+                <a href="#">info@kgguide.kg</a>
+                <a href="#">Бишкек, Кыргызстан</a>
+                <a href="#">ул. Московская 168 (Магазин)</a>
+            </div>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>© 2026 KG Guide · Создано с ❤ для Кыргызстана</p>
+    </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
