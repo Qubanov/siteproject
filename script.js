@@ -1,509 +1,617 @@
-/**
- * KG GUIDE v2 — script.js
- */
-
+/* ══════════════════════════════════════════════
+   KG GUIDE v3.2 — КАРУСЕЛЬ + КОНТАКТЫ + САЙДБАР
+══════════════════════════════════════════════ */
 const API = 'http://localhost:8000';
 
-// ════ STATE ════
-const state = {
-    favorites: new Set(JSON.parse(localStorage.getItem('kg_fav') || '[]')),
-    user:      JSON.parse(localStorage.getItem('kg_user') || 'null'),
-    filters:   { cat:'all', type:'all', city:'all', search:'' },
-    timer:     null,
-};
+let allPlaces = [];
+let placesPage = 0;
+let activePlacesType = 'all';
+let activePlacesCat  = 'all';
+const PER_PAGE = 12;
 
-// ════ UTILS ════
-const $ = (s, ctx=document) => ctx.querySelector(s);
-const $$ = (s, ctx=document) => [...ctx.querySelectorAll(s)];
-const parseTypes = (t) => { if (!t) return []; if (Array.isArray(t)) return t; try{return JSON.parse(t);}catch{return [];} };
-const typeLabel = (t) => ({ romance:'❤ Романтика', friends:'👥 Друзья', family:'👨‍👩‍👧 Семья' }[t] || t);
-const getRecMap = () => ({ romance:{icon:'❤️',text:'Идеально для романтического свидания'}, friends:{icon:'🎉',text:'Отлично для компании и праздников'}, family:{icon:'👨‍👩‍👧',text:'Прекрасно для всей семьи'} });
+let cart      = JSON.parse(localStorage.getItem('kg_cart')      || '[]');
+let favorites = JSON.parse(localStorage.getItem('kg_favorites') || '[]');
+let currentUser = JSON.parse(localStorage.getItem('kg_user')    || 'null');
 
-// ════ API ════
-async function fetchPlaces(params={}) {
-    const url = new URL(`${API}/places`);
-    Object.entries(params).forEach(([k,v]) => { if (v && v!=='all') url.searchParams.append(k,v); });
-    const r = await fetch(url); if (!r.ok) throw new Error(); return r.json();
-}
-async function fetchPlace(id) { const r = await fetch(`${API}/places/${id}`); if (!r.ok) throw new Error(); return r.json(); }
-async function fetchCategories() { try{const r=await fetch(`${API}/categories`);return r.ok?r.json():[];}catch{return[];} }
-async function fetchCities() { try{const r=await fetch(`${API}/cities`);return r.ok?r.json():[];}catch{return[];} }
-
-// ════ RENDER CARD ════
-function renderCard(p, delay=0) {
-    const types = parseTypes(p.types);
-    const isFav = state.favorites.has(p.id);
-    const rating = p.rating ? p.rating.toFixed(1) : '—';
-    const typeTags = types.map(t=>`<span class="type-tag ${t}">${typeLabel(t)}</span>`).join('');
-
-    const card = document.createElement('div');
-    card.className = 'place-card';
-    card.style.animationDelay = `${delay}ms`;
-    card.dataset.id = p.id;
-    card.innerHTML = `
-        <div class="card-img-wrap">
-            <img class="card-img" src="${p.image_url||'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=800'}" alt="${p.name}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1501854140801-50d01698950b?q=80&w=800'">
-            <span class="card-badge">${p.category}</span>
-            <button class="card-fav ${isFav?'active':''}" data-id="${p.id}">${isFav?'❤️':'🤍'}</button>
-        </div>
-        <div class="card-body">
-            <h3 class="card-title">${p.name}</h3>
-            <p class="card-desc">${p.description}</p>
-            <div class="card-meta">
-                <span class="card-rating">⭐ ${rating}</span>
-                ${p.city?`<span class="card-city">📍 ${p.city}</span>`:''}
-            </div>
-            ${typeTags?`<div class="card-types">${typeTags}</div>`:''}
-        </div>
-        <div class="card-footer">
-            <span class="card-price">${p.price_range||''}</span>
-            <button class="btn-more" data-id="${p.id}">Подробнее →</button>
-        </div>`;
-
-    card.querySelector('.card-fav').addEventListener('click', e => { e.stopPropagation(); toggleFav(p.id, card.querySelector('.card-fav')); });
-    card.querySelector('.btn-more').addEventListener('click', e => { e.stopPropagation(); openPlaceModal(p.id); });
-    card.addEventListener('click', () => openPlaceModal(p.id));
-    return card;
-}
-
-function renderGrid(places, container) {
-    container.innerHTML = '';
-    if (!places.length) { $('#no-results') && ($('#no-results').style.display='block'); return; }
-    $('#no-results') && ($('#no-results').style.display='none');
-    places.forEach((p,i) => container.appendChild(renderCard(p, i*55)));
-}
-
-// ════ FAVORITES ════
-function toggleFav(id, btn) {
-    if (state.favorites.has(id)) { state.favorites.delete(id); btn.innerHTML='🤍'; btn.classList.remove('active'); }
-    else { state.favorites.add(id); btn.innerHTML='❤️'; btn.classList.add('active'); }
-    localStorage.setItem('kg_fav', JSON.stringify([...state.favorites]));
-    updateFavBadge();
-}
-function updateFavBadge() {
-    const n = state.favorites.size;
-    $$('.fav-badge-count').forEach(b => { b.textContent=n; b.style.display=n>0?'inline-flex':'none'; });
-}
-async function renderFavorites() {
-    const grid = $('#favorites-grid');
-    if (!grid) return;
-    if (!state.favorites.size) { grid.innerHTML=`<div class="empty-state"><span>🗺</span><h3>Список пуст</h3><p>Нажмите ❤ на карточке</p><button class="btn-gold tab-link" data-target="places">Найти места</button></div>`; attachTabLinks(); return; }
-    grid.innerHTML='<div class="loading-state"><div class="spinner"></div><p>Загружаем...</p></div>';
-    try {
-        const items = (await Promise.all([...state.favorites].map(id=>fetchPlace(id).catch(()=>null)))).filter(Boolean);
-        renderGrid(items, grid);
-        const sub=$('#fav-subtitle'); if(sub) sub.textContent=`${items.length} мест сохранено`;
-    } catch { grid.innerHTML='<div class="loading-state"><p>Ошибка загрузки</p></div>'; }
-}
-
-// ════ PLACE MODAL ════
-async function openPlaceModal(id) {
-    const overlay=$('#place-overlay'), body=$('#place-modal-body');
-    overlay.classList.add('open'); document.body.style.overflow='hidden';
-    body.innerHTML='<div class="loading-state"><div class="spinner"></div></div>';
-    try {
-        const p = await fetchPlace(id);
-        const types = parseTypes(p.types);
-        const recMap = getRecMap();
-        const recs = types.map(t=>recMap[t]).filter(Boolean);
-        const mapUrl = p.location ? `https://www.google.com/maps/search/?api=1&query=${p.location}` : null;
-
-        body.innerHTML = `
-            <img class="pm-img" src="${p.image_url||'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1200'}" alt="${p.name}" onerror="this.src='https://images.unsplash.com/photo-1501854140801-50d01698950b?q=80&w=1200'">
-            <div class="pm-body">
-                <div class="pm-top"><span class="pm-cat">${p.category}</span><span class="pm-rating">⭐ ${p.rating?p.rating.toFixed(1):'—'}</span></div>
-                <h2 class="pm-title">${p.name}</h2>
-                <p class="pm-desc">${p.description}</p>
-                <div class="pm-grid">
-                    ${p.address?`<div class="pm-info"><div class="lbl">📍 Адрес</div><div class="val">${p.address}</div></div>`:''}
-                    ${p.city?`<div class="pm-info"><div class="lbl">🏙 Город</div><div class="val">${p.city}</div></div>`:''}
-                    ${p.price_range?`<div class="pm-info"><div class="lbl">💰 Стоимость</div><div class="val">${p.price_range}</div></div>`:''}
-                    ${p.rating?`<div class="pm-info"><div class="lbl">⭐ Рейтинг</div><div class="val">${p.rating.toFixed(1)} / 5.0</div></div>`:''}
-                </div>
-                <div class="pm-tags">${types.map(t=>`<span class="type-tag ${t}">${typeLabel(t)}</span>`).join('')}</div>
-                ${recs.length?`<div class="pm-recs"><h4>Рекомендации</h4>${recs.map(r=>`<div class="pm-rec"><span style="font-size:20px">${r.icon}</span>${r.text}</div>`).join('')}</div>`:''}
-                ${mapUrl?`<a href="${mapUrl}" target="_blank" class="pm-map">🗺 Открыть на Google Maps</a>`:''}
-            </div>`;
-    } catch { body.innerHTML='<div class="loading-state"><p>Ошибка загрузки</p></div>'; }
-}
-function closePlaceModal() { $('#place-overlay').classList.remove('open'); document.body.style.overflow=''; }
-
-// ════ PLACES PAGE ════
-async function loadPlaces() {
-    const grid=$('#places-grid'), noR=$('#no-results'), cnt=$('#places-count');
-    if (!grid) return;
-    grid.innerHTML='<div class="loading-state"><div class="spinner"></div><p>Загружаем...</p></div>';
-    if(noR) noR.style.display='none';
-    try {
-        const params={};
-        if(state.filters.cat!=='all')    params.category=state.filters.cat;
-        if(state.filters.type!=='all')   params.type=state.filters.type;
-        if(state.filters.city!=='all')   params.city=state.filters.city;
-        if(state.filters.search)         params.search=state.filters.search;
-        const places = await fetchPlaces(params);
-        renderGrid(places, grid);
-        if(cnt) cnt.textContent=`Найдено: ${places.length} мест`;
-    } catch {
-        grid.innerHTML='<div class="loading-state"><p>⚠ Backend не запущен. Запустите:<br><code>uvicorn main:app --reload --port 8000</code></p></div>';
-    }
-}
-
-// ════ FEATURED ════
-async function loadFeatured() {
-    const grid=$('#featured-grid'); if(!grid) return;
-    try {
-        const all = await fetchPlaces({limit:20});
-        const top = all.filter(p=>(p.rating||0)>=4.7).slice(0,6);
-        renderGrid(top.length?top:all.slice(0,6), grid);
-    } catch {
-        grid.innerHTML='<div class="loading-state"><p>⚠ Backend не запущен</p></div>';
-    }
-}
-
-// ════ FILTERS INIT ════
-async function initFilters() {
-    const catChips = $('#category-chips');
-    const cats = await fetchCategories();
-    cats.forEach(cat => {
-        const b=document.createElement('button');
-        b.className='chip'; b.dataset.cat=cat;
-        b.textContent=cat.charAt(0).toUpperCase()+cat.slice(1);
-        catChips.appendChild(b);
-    });
-    const citySelect=$('#city-filter');
-    const cities = await fetchCities();
-    cities.forEach(c => {
-        const o=document.createElement('option');
-        o.value=c; o.textContent=c; citySelect.appendChild(o);
-    });
-
-    $$('.filter-chips').forEach(group => {
-        group.addEventListener('click', e => {
-            const chip=e.target.closest('.chip'); if(!chip) return;
-            if(chip.dataset.cat!==undefined) { $$('.chip[data-cat]').forEach(c=>c.classList.remove('active')); chip.classList.add('active'); state.filters.cat=chip.dataset.cat; }
-            if(chip.dataset.type!==undefined) { $$('.chip[data-type]').forEach(c=>c.classList.remove('active')); chip.classList.add('active'); state.filters.type=chip.dataset.type; }
-            loadPlaces();
-        });
-    });
-    citySelect && citySelect.addEventListener('change', () => { state.filters.city=citySelect.value; loadPlaces(); });
-}
-
-// ════ AUTH ════
-function initAuth() {
-    const authOverlay = $('#auth-overlay');
-
-    function openAuth(tab='login') {
-        authOverlay.classList.add('open');
-        document.body.style.overflow='hidden';
-        $$('.auth-tab').forEach(t=>t.classList.remove('active'));
-        $$('.auth-pane').forEach(p=>p.classList.remove('active'));
-        $(`.auth-tab[data-auth="${tab}"]`).classList.add('active');
-        $(`#auth-${tab}`).classList.add('active');
-    }
-    function closeAuth() { authOverlay.classList.remove('open'); document.body.style.overflow=''; }
-
-    // Open triggers
-    $('#profile-btn').addEventListener('click', () => state.user ? openProfileMenu() : openAuth('login'));
-    $('#sb-auth-btn').addEventListener('click', () => openAuth('login'));
-    $('#sb-profile-area').addEventListener('click', () => !state.user && openAuth('login'));
-    $('#auth-close').addEventListener('click', closeAuth);
-    authOverlay.addEventListener('click', e => { if(e.target===authOverlay) closeAuth(); });
-
-    // Switch tabs
-    $$('.auth-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            $$('.auth-tab').forEach(t=>t.classList.remove('active'));
-            $$('.auth-pane').forEach(p=>p.classList.remove('active'));
-            tab.classList.add('active');
-            $(`#auth-${tab.dataset.auth}`).classList.add('active');
-        });
-    });
-
-    $('#go-register').addEventListener('click', e => { e.preventDefault(); openAuth('register'); });
-    $('#go-login').addEventListener('click', e => { e.preventDefault(); openAuth('login'); });
-
-    // LOGIN
-    $('#btn-login').addEventListener('click', () => {
-        const email=$('#login-email').value.trim();
-        const pass=$('#login-pass').value;
-        if(!email||!pass) { alert('Заполните все поля'); return; }
-        const users = JSON.parse(localStorage.getItem('kg_users')||'[]');
-        const found = users.find(u=>u.email===email&&u.pass===pass);
-        if(!found) { alert('Неверный email или пароль'); return; }
-        loginUser(found); closeAuth();
-    });
-
-    // REGISTER
-    $('#btn-register').addEventListener('click', () => {
-        const name=$('#reg-name').value.trim();
-        const email=$('#reg-email').value.trim();
-        const pass=$('#reg-pass').value;
-        if(!name||!email||!pass) { alert('Заполните все поля'); return; }
-        if(pass.length<6) { alert('Пароль минимум 6 символов'); return; }
-        const users = JSON.parse(localStorage.getItem('kg_users')||'[]');
-        if(users.find(u=>u.email===email)) { alert('Этот email уже зарегистрирован'); return; }
-        const user = { id:Date.now(), name, email, pass };
-        users.push(user); localStorage.setItem('kg_users', JSON.stringify(users));
-        loginUser(user); closeAuth();
-    });
-}
-
-function loginUser(user) {
-    state.user = user;
-    localStorage.setItem('kg_user', JSON.stringify(user));
-    updateProfileUI();
-}
-
-function logoutUser() {
-    state.user = null;
-    localStorage.removeItem('kg_user');
-    updateProfileUI();
-}
-
-function updateProfileUI() {
-    const u = state.user;
-    const initial = u ? u.name.charAt(0).toUpperCase() : '?';
-    const name    = u ? u.name : 'Войти';
-
-    // Header
-    const ha=$('#header-avatar'), hn=$('#header-name');
-    if(ha) ha.textContent=initial;
-    if(hn) hn.textContent=name;
-
-    // Sidebar
-    const sa=$('#sb-avatar'), sn=$('#sb-name-text'), ss=$('#sb-sub-text');
-    if(sa) sa.textContent=initial;
-    if(sn) sn.textContent=u ? u.name : 'Войдите в аккаунт';
-    if(ss) ss.textContent=u ? u.email : 'для доступа к профилю';
-
-    // Auth button in sidebar
-    const sbBtn=$('#sb-auth-btn');
-    if(sbBtn) sbBtn.textContent=u ? 'Выйти из аккаунта' : 'Войти / Регистрация';
-    if(u) {
-        sbBtn && sbBtn.removeEventListener('click', sbBtn._handler);
-        sbBtn && (sbBtn._handler=()=>{ logoutUser(); });
-        sbBtn && sbBtn.addEventListener('click', sbBtn._handler);
-    }
-}
-
-function openProfileMenu() {
-    if(!state.user) return;
-    if(confirm(`Вы вошли как ${state.user.name}.\nВыйти из аккаунта?`)) logoutUser();
-}
-
-// ════ SIDEBAR ════
-function initSidebar() {
-    const sb=$('#sidebar'), ov=$('#sidebar-overlay');
-    const open=()=>{ sb.classList.add('open'); ov.classList.add('active'); document.body.style.overflow='hidden'; };
-    const close=()=>{ sb.classList.remove('open'); ov.classList.remove('active'); document.body.style.overflow=''; };
-    $('.open-sidebar') && $('.open-sidebar').addEventListener('click', open);
-    $('.close-sidebar') && $('.close-sidebar').addEventListener('click', close);
-    ov && ov.addEventListener('click', close);
-    document.addEventListener('keydown', e => { if(e.key==='Escape'){ close(); closePlaceModal(); $('#auth-overlay').classList.remove('open'); document.body.style.overflow=''; } });
-}
-
-// ════ NAVIGATION ════
-function switchTab(targetId, opts={}) {
-    $('#sidebar').classList.remove('open');
-    $('#sidebar-overlay').classList.remove('active');
-    document.body.style.overflow='';
-
-    $$('.tab-pane').forEach(p=>p.classList.remove('active'));
-    $$('.tab-link').forEach(l=>l.classList.remove('active'));
-    const target=$(`#${targetId}`); if(target) target.classList.add('active');
-    $$(`.tab-link[data-target="${targetId}"]`).forEach(l=>l.classList.add('active'));
-    window.scrollTo({top:0,behavior:'smooth'});
-
-    if(targetId==='places') {
-        if(opts.cat)  { state.filters.cat=opts.cat; state.filters.type='all'; }
-        if(opts.type) { state.filters.type=opts.type; state.filters.cat='all'; }
-        loadPlaces();
-    }
-    if(targetId==='favorites') renderFavorites();
-}
-
-function attachTabLinks() {
-    $$('.tab-link').forEach(link => {
-        link.onclick = (e) => {
-            e.preventDefault();
-            const target=link.dataset.target; if(!target) return;
-            switchTab(target, { cat:link.dataset.cat, type:link.dataset.type });
-        };
-    });
-}
-
-// ════ SEARCH ════
-function initSearch() {
-    const toggle=$('#search-toggle'), bar=$('#search-bar'), input=$('#global-search'), close=$('#search-close-btn');
-    toggle && toggle.addEventListener('click', () => { bar.classList.toggle('open'); if(bar.classList.contains('open')) input.focus(); });
-    close  && close.addEventListener('click', () => { bar.classList.remove('open'); input.value=''; state.filters.search=''; });
-    input  && input.addEventListener('input', () => {
-        clearTimeout(state.timer);
-        state.timer = setTimeout(() => { state.filters.search=input.value.trim(); switchTab('places'); }, 400);
-    });
-}
-
-// ════ BOOKING FORM ════
-function initBookingForm() {
-    const btn=$('#bf-submit'), res=$('#bf-result');
-    btn && btn.addEventListener('click', () => {
-        const name=$('#bf-name').value.trim(), phone=$('#bf-phone').value.trim(), msg=$('#bf-msg').value.trim();
-        if(!name||!phone) { res.className=''; res.textContent='Пожалуйста, заполните имя и телефон.'; return; }
-        btn.disabled=true; btn.textContent='Отправка...';
-        setTimeout(() => {
-            res.className='ok'; res.textContent='✓ Заявка принята! Свяжемся с вами в течение часа.';
-            btn.disabled=false; btn.textContent='Отправить заявку';
-            $('#bf-name').value=''; $('#bf-phone').value=''; $('#bf-msg').value='';
-        }, 1500);
-    });
-}
-
-// ════ HEADER SCROLL ════
-window.addEventListener('scroll', () => $('#main-header').classList.toggle('scrolled', scrollY>50), {passive:true});
-
-// ════ BENTO ════
-function initBento() {
-    $$('.bento-item').forEach(item => {
-        item.addEventListener('click', () => {
-            switchTab('places', { cat:item.dataset.cat, type:item.dataset.type });
-        });
-    });
-}
-
-// ════ BOOT ════
-document.addEventListener('DOMContentLoaded', async () => {
+/* ════════════ ИНИЦИАЛИЗАЦИЯ ════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+    initHeader();
     initSidebar();
-    initAuth();
     initSearch();
-    initBento();
-    initBookingForm();
-
-    $('#place-modal-close') && $('#place-modal-close').addEventListener('click', closePlaceModal);
-    $('#place-overlay') && $('#place-overlay').addEventListener('click', e => { if(e.target===$('#place-overlay')) closePlaceModal(); });
-
-    attachTabLinks();
-    updateProfileUI();
+    initTabNav();
+    initCarousel();
+    loadAllPlaces();
+    renderShop();
+    updateCartUI();
+    updateAuthUI();
     updateFavBadge();
-
-    await initFilters();
-    await loadFeatured();
 });
 
-// ════ SHOP ════
-const cart = JSON.parse(localStorage.getItem('kg_cart') || '[]');
+/* ════════════ HEADER ════════════ */
+function initHeader() {
+    const header = document.getElementById('header');
+    window.addEventListener('scroll', () => header.classList.toggle('scrolled', window.scrollY > 40), {passive:true});
+    document.getElementById('profile-btn').onclick = () => currentUser ? openProfileModal() : openModal('auth-overlay');
+}
 
-function updateCartUI() {
-    const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
-    const count = cart.reduce((s, i) => s + i.qty, 0);
-    const fab = document.getElementById('cart-fab');
-    const display = document.getElementById('cart-total-display');
-    if (fab) {
-        if (count > 0) { fab.classList.add('visible'); }
-        else { fab.classList.remove('visible'); }
+/* ════════════ КАРУСЕЛЬ ════════════ */
+let carouselIdx = 0;
+let carouselTotal = 0;
+let carouselTimer = null;
+const CAROUSEL_INTERVAL = 5000;
+let carouselProgress = 0;
+let progressTimer = null;
+
+function initCarousel() {
+    const track = document.getElementById('carousel-track');
+    if (!track) return;
+    carouselTotal = track.children.length;
+
+    // Генерируем точки
+    const dotsEl = document.getElementById('carousel-dots');
+    for (let i = 0; i < carouselTotal; i++) {
+        const dot = document.createElement('button');
+        dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+        dot.onclick = () => carouselGoTo(i);
+        dotsEl.appendChild(dot);
     }
-    if (display) display.textContent = total.toLocaleString('ru') + ' сом';
-    localStorage.setItem('kg_cart', JSON.stringify(cart));
-}
+    startCarouselTimer();
 
-function addToCart(btn, name, price) {
-    const existing = cart.find(i => i.name === name);
-    if (existing) { existing.qty++; }
-    else { cart.push({ name, price, qty: 1 }); }
-    btn.textContent = '✓ Добавлено';
-    btn.classList.add('in-cart');
-    setTimeout(() => { btn.textContent = 'В корзину'; btn.classList.remove('in-cart'); }, 1800);
-    updateCartUI();
-}
-
-function openCartModal() {
-    if (!cart.length) { alert('Корзина пуста'); return; }
-    const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
-    const items = cart.map(i => `• ${i.name} × ${i.qty} — ${(i.price*i.qty).toLocaleString('ru')} сом`).join('\n');
-    if (confirm(`🛒 Ваш заказ:\n\n${items}\n\nИтого: ${total.toLocaleString('ru')} сом\n\nОформить заказ?`)) {
-        cart.length = 0;
-        updateCartUI();
-        alert('✓ Заказ принят! Менеджер свяжется с вами в течение часа по номеру в профиле.');
+    // Свайп на мобилке
+    let touchStartX = 0;
+    const outer = document.querySelector('.carousel-track-outer');
+    if (outer) {
+        outer.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive:true});
+        outer.addEventListener('touchend', e => {
+            const diff = touchStartX - e.changedTouches[0].clientX;
+            if (Math.abs(diff) > 50) diff > 0 ? carouselNext() : carouselPrev();
+        });
     }
 }
 
-// ════ PROMO COPY ════
-function copyPromo(code, el) {
-    navigator.clipboard.writeText(code).then(() => {
-        const orig = el.textContent;
-        el.textContent = '✓ Скопировано!';
-        el.style.background = 'rgba(80,220,130,0.15)';
-        el.style.borderColor = 'rgba(80,220,130,0.4)';
-        el.style.color = '#70e0a0';
-        setTimeout(() => {
-            el.textContent = orig;
-            el.style.background = '';
-            el.style.borderColor = '';
-            el.style.color = '';
-        }, 2000);
-    }).catch(() => {
-        el.textContent = code; // fallback
-        alert('Промокод: ' + code);
+function carouselGoTo(idx) {
+    carouselIdx = (idx + carouselTotal) % carouselTotal;
+    const track = document.getElementById('carousel-track');
+    if (track) track.style.transform = `translateX(-${carouselIdx * 100}%)`;
+    // Обновить точки
+    document.querySelectorAll('.carousel-dot').forEach((d, i) => d.classList.toggle('active', i === carouselIdx));
+    resetCarouselTimer();
+}
+
+function carouselNext() { carouselGoTo(carouselIdx + 1); }
+function carouselPrev() { carouselGoTo(carouselIdx - 1); }
+
+function startCarouselTimer() {
+    clearInterval(carouselTimer);
+    clearInterval(progressTimer);
+    carouselProgress = 0;
+    updateProgressBar();
+
+    progressTimer = setInterval(() => {
+        carouselProgress += 100 / (CAROUSEL_INTERVAL / 100);
+        if (carouselProgress >= 100) carouselProgress = 100;
+        updateProgressBar();
+    }, 100);
+
+    carouselTimer = setInterval(() => {
+        carouselNext();
+    }, CAROUSEL_INTERVAL);
+}
+
+function resetCarouselTimer() {
+    carouselProgress = 0;
+    updateProgressBar();
+    startCarouselTimer();
+}
+
+function updateProgressBar() {
+    const bar = document.getElementById('carousel-progress-bar');
+    if (bar) bar.style.width = carouselProgress + '%';
+}
+
+/* ════════════ ТАБ-НАВИГАЦИЯ ════════════ */
+function initTabNav() {
+    document.querySelectorAll('.top-nav a[data-tab]').forEach(a => {
+        a.addEventListener('click', e => { e.preventDefault(); switchTab(a.dataset.tab); });
     });
-}
-
-// ════ SHOP FILTER ════
-function initShopFilter() {
-    document.addEventListener('click', e => {
-        const chip = e.target.closest('[data-shop-cat]');
-        if (!chip) return;
-        document.querySelectorAll('[data-shop-cat]').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        const cat = chip.dataset.shopCat;
-        document.querySelectorAll('.product-card').forEach(card => {
-            card.style.display = (cat === 'all' || card.dataset.shopCat === cat) ? '' : 'none';
+    document.querySelectorAll('.side-nav a[data-tab]').forEach(a => {
+        a.addEventListener('click', e => {
+            e.preventDefault();
+            const tab = a.dataset.tab;
+            const cat = a.dataset.cat;
+            if (cat) { switchTab('places'); applyCategoryFilter(cat); }
+            else switchTab(tab);
+            closeSidebar();
         });
     });
 }
 
-// ════ PLAN MODAL ════
-function showPlanModal(plan) {
-    if (state.user) {
-        alert(`✓ Тариф «${plan}» активирован!\n\nПромокоды и скидки появятся в вашем профиле.\nЕсли возникнут вопросы — напишите нам.`);
-    } else {
-        if (confirm(`Для оформления тарифа «${plan}» необходимо войти в аккаунт.\n\nВойти сейчас?`)) {
-            document.getElementById('auth-overlay').classList.add('open');
-            document.body.style.overflow = 'hidden';
-        }
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    const pane = document.getElementById(`tab-${tabId}`);
+    if (pane) { pane.classList.add('active'); window.scrollTo({top:0, behavior:'smooth'}); }
+    document.querySelectorAll('.top-nav a[data-tab], .side-nav a[data-tab]').forEach(a => {
+        a.classList.toggle('active', a.dataset.tab === tabId && !a.dataset.cat);
+    });
+    if (tabId === 'favorites') renderFavGrid();
+}
+
+/* ════════════ SIDEBAR ════════════ */
+function initSidebar() {
+    document.getElementById('open-sidebar').onclick = openSidebar;
+    document.getElementById('close-sidebar').onclick = closeSidebar;
+    document.getElementById('sidebar-overlay').onclick = closeSidebar;
+    document.getElementById('sb-profile-btn').onclick = () => { closeSidebar(); currentUser ? openProfileModal() : openModal('auth-overlay'); };
+    document.getElementById('sb-auth-btn').onclick = () => { closeSidebar(); currentUser ? doLogout() : openModal('auth-overlay'); };
+}
+function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('active'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('active'); }
+
+/* ════════════ INFO МОДАЛКИ (поддержка / политика) ════════════ */
+const INFO_CONTENT = {
+    support: {
+        title: '💬 Техническая поддержка',
+        html: `
+        <h4>Свяжитесь с нами</h4>
+        <div class="support-links">
+          <a class="support-link" href="https://t.me/kgguide_support" target="_blank"><span class="sl-icon">✈️</span><div><span>Telegram</span><span class="sl-sub">@kgguide_support — ответим за 30 минут</span></div></a>
+          <a class="support-link" href="https://wa.me/996700000001" target="_blank"><span class="sl-icon">💬</span><div><span>WhatsApp</span><span class="sl-sub">+996 700 000 001 — пн-вс 9:00–22:00</span></div></a>
+          <a class="support-link" href="mailto:support@kgguide.kg"><span class="sl-icon">📧</span><div><span>Email</span><span class="sl-sub">support@kgguide.kg</span></div></a>
+          <a class="support-link" href="https://instagram.com/kgguide.kg" target="_blank"><span class="sl-icon">📸</span><div><span>Instagram</span><span class="sl-sub">@kgguide.kg — DM всегда открыты</span></div></a>
+        </div>
+        <h4>Частые вопросы</h4>
+        <p><strong>Как добавить место в избранное?</strong> — Нажмите ♡ на карточке места.</p>
+        <p><strong>Как отменить подписку?</strong> — Зайдите в профиль → Тарифный план → Базовый.</p>
+        <p><strong>Промокод не работает?</strong> — Убедитесь, что срок действия не истёк и нет пробелов при вводе.</p>`
+    },
+    about: {
+        title: 'ℹ️ О приложении KG Guide',
+        html: `
+        <h4>Что такое KG Guide?</h4>
+        <p>KG Guide — это персональный путеводитель по Кыргызстану. Мы собрали лучшие рестораны, кафе, природные места, спа и ночные заведения, чтобы вы всегда знали, куда пойти.</p>
+        <h4>Наша миссия</h4>
+        <p>Помочь каждому жителю и туристу Кыргызстана открыть страну заново — найти своё идеальное место для романтики, дружеского отдыха или семейного досуга.</p>
+        <h4>Версия</h4>
+        <p>KG Guide v1.0 · Апрель 2026</p>
+        <h4>Разработка</h4>
+        <p>Создано с любовью в Бишкеке 🇰🇬</p>
+        <div class="support-links" style="margin-top:14px">
+          <a class="support-link" href="https://instagram.com/kgguide.kg" target="_blank"><span class="sl-icon">📸</span><div><span>Instagram</span><span class="sl-sub">@kgguide.kg</span></div></a>
+          <a class="support-link" href="https://t.me/kgguide" target="_blank"><span class="sl-icon">✈️</span><div><span>Telegram-канал</span><span class="sl-sub">@kgguide — новости и события</span></div></a>
+        </div>`
+    },
+    privacy: {
+        title: '🔒 Политика конфиденциальности',
+        html: `
+        <h4>Сбор данных</h4>
+        <p>KG Guide собирает только минимально необходимые данные: имя, email и зашифрованный пароль при регистрации. Мы не продаём и не передаём ваши данные третьим лицам.</p>
+        <h4>Хранение данных</h4>
+        <p>Все данные хранятся на защищённых серверах. Пароли хешируются по алгоритму SHA-256 и никогда не хранятся в открытом виде.</p>
+        <h4>Cookies и локальное хранилище</h4>
+        <p>Приложение использует localStorage для хранения списка избранного и корзины. Эти данные не покидают ваше устройство.</p>
+        <h4>Ваши права</h4>
+        <p>Вы можете запросить удаление своих данных в любое время, обратившись в поддержку по адресу support@kgguide.kg.</p>
+        <h4>Изменения политики</h4>
+        <p>Мы уведомим пользователей об изменениях через приложение. Последнее обновление: апрель 2026.</p>`
+    },
+    terms: {
+        title: '📄 Пользовательское соглашение',
+        html: `
+        <h4>Общие положения</h4>
+        <p>Используя KG Guide, вы соглашаетесь с настоящим соглашением. Приложение предоставляется «как есть» для поиска мест досуга в Кыргызстане.</p>
+        <h4>Регистрация</h4>
+        <p>Пользователь обязуется указывать достоверную информацию при регистрации. Запрещается создавать несколько аккаунтов или использовать чужие данные.</p>
+        <h4>Контент</h4>
+        <p>Информация о местах носит рекомендательный характер. KG Guide не несёт ответственности за изменения в работе заведений (режим, цены, качество).</p>
+        <h4>Промокоды и скидки</h4>
+        <p>Промокоды предоставляются партнёрами. KG Guide не гарантирует их принятие и не несёт ответственности за отказ партнёра применить скидку.</p>
+        <h4>Запрещённые действия</h4>
+        <p>Запрещается взлом, спам, размещение ложных отзывов, использование приложения в незаконных целях.</p>
+        <h4>Контакты</h4>
+        <p>По всем вопросам: legal@kgguide.kg · КР, г. Бишкек</p>`
+    },
+    'partner-info': {
+        title: '🤝 Стать партнёром',
+        html: `
+        <h4>Почему стоит разместиться на KG Guide?</h4>
+        <p>Тысячи пользователей каждый день ищут места для отдыха именно в KG Guide. Партнёры получают прирост клиентов до 60% уже в первый квартал.</p>
+        <h4>Что вы получаете?</h4>
+        <p>Страница вашего бизнеса, уникальный промокод для клиентов, аналитика переходов и приоритет в поисковой выдаче.</p>
+        <h4>Как подать заявку?</h4>
+        <div class="support-links" style="margin-top:10px">
+          <a class="support-link" href="https://t.me/kgguide_partner" target="_blank"><span class="sl-icon">✈️</span><div><span>Telegram</span><span class="sl-sub">@kgguide_partner — менеджер ответит быстро</span></div></a>
+          <a class="support-link" href="mailto:partner@kgguide.kg"><span class="sl-icon">📧</span><div><span>Email</span><span class="sl-sub">partner@kgguide.kg</span></div></a>
+        </div>
+        <p style="margin-top:14px">Или заполните форму в разделе <strong>«Партнёрство»</strong> — мы свяжемся в течение 1 рабочего дня.</p>
+        <div style="text-align:center;margin-top:18px"><button class="btn-gold" onclick="closeModal('info-overlay');switchTab('partner')">Заполнить форму →</button></div>`
+    }
+};
+
+function openInfoModal(type) {
+    const content = INFO_CONTENT[type];
+    if (!content) return;
+    document.getElementById('info-modal-content').innerHTML = `<h2>${content.title}</h2>${content.html}`;
+    openModal('info-overlay');
+}
+
+/* ════════════ SEARCH ════════════ */
+function initSearch() {
+    const bar = document.getElementById('search-bar');
+    const input = document.getElementById('global-search');
+    document.getElementById('search-toggle-btn').onclick = () => { bar.classList.toggle('open'); if (bar.classList.contains('open')) input.focus(); };
+    document.getElementById('search-close-btn').onclick = () => { bar.classList.remove('open'); input.value=''; };
+    let t;
+    input.addEventListener('input', () => {
+        clearTimeout(t);
+        t = setTimeout(() => {
+            const q = input.value.trim();
+            if (q.length > 1) { switchTab('places'); searchPlaces(q); }
+        }, 350);
+    });
+}
+function searchPlaces(q) {
+    const low = q.toLowerCase();
+    const res = allPlaces.filter(p => p.name.toLowerCase().includes(low) || p.description.toLowerCase().includes(low) || p.city.toLowerCase().includes(low) || p.category.toLowerCase().includes(low));
+    document.getElementById('places-subtitle').textContent = `Результаты: «${q}» — ${res.length} мест`;
+    renderPlacesGrid(res);
+}
+
+/* ════════════ МЕСТА ════════════ */
+function goToPlaces(filter) {
+    switchTab('places');
+    const types = ['romance','friends','family'];
+    const cats  = ['природа','кафе','ресторан','шоппинг','спа','ночная жизнь','активный отдых'];
+    if (types.includes(filter)) applyTypeFilter(filter);
+    else if (cats.includes(filter)) applyCategoryFilter(filter);
+}
+
+function applyTypeFilter(type) {
+    activePlacesType = type; activePlacesCat = 'all';
+    document.querySelectorAll('#type-chips .chip').forEach(c => c.classList.toggle('active', c.dataset.type === type));
+    document.querySelectorAll('#cat-chips .chip').forEach(c => c.classList.toggle('active', c.dataset.cat === 'all'));
+    const labels = {romance:'❤️ Романтика', friends:'👫 С друзьями', family:'👨‍👩‍👧 Семья'};
+    document.getElementById('places-subtitle').textContent = type === 'all' ? 'Все лучшие места Кыргызстана' : `Места: ${labels[type] || type}`;
+    placesPage = 0; renderFilteredPlaces();
+}
+function applyCategoryFilter(cat) {
+    activePlacesCat = cat; activePlacesType = 'all';
+    document.querySelectorAll('#cat-chips .chip').forEach(c => c.classList.toggle('active', c.dataset.cat === cat));
+    document.querySelectorAll('#type-chips .chip').forEach(c => c.classList.toggle('active', c.dataset.type === 'all'));
+    document.getElementById('places-subtitle').textContent = cat === 'all' ? 'Все лучшие места Кыргызстана' : `Категория: ${cat}`;
+    placesPage = 0; renderFilteredPlaces();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('type-chips')?.addEventListener('click', e => {
+        const chip = e.target.closest('[data-type]');
+        if (chip) applyTypeFilter(chip.dataset.type);
+    });
+    document.getElementById('cat-chips')?.addEventListener('click', e => {
+        const chip = e.target.closest('[data-cat]');
+        if (chip) applyCategoryFilter(chip.dataset.cat);
+    });
+});
+
+async function loadAllPlaces() {
+    try {
+        const res = await fetch(`${API}/places?limit=500`);
+        allPlaces = await res.json();
+        allPlaces.forEach(p => { try { p.types = typeof p.types === 'string' ? JSON.parse(p.types) : p.types; } catch { p.types=[]; } });
+        renderFilteredPlaces();
+        updateNavBadge();
+    } catch(e) {
+        document.getElementById('places-grid').innerHTML = `<div class="empty-state"><span>⚠️</span><h3>Сервер недоступен</h3><p style="color:var(--gray)">Запусти: py -m uvicorn main:app --reload --port 8000</p></div>`;
     }
 }
 
-// ════ PARTNERSHIP FORM ════
-function initPartnershipForm() {
-    const btn = document.getElementById('pf-submit');
-    const res = document.getElementById('pf-result');
-    if (!btn) return;
-    btn.addEventListener('click', () => {
-        const company = document.getElementById('pf-company').value.trim();
-        const name = document.getElementById('pf-name').value.trim();
-        const phone = document.getElementById('pf-phone').value.trim();
-        if (!company || !name || !phone) {
-            res.style.color = 'var(--primary)';
-            res.textContent = 'Пожалуйста, заполните обязательные поля.';
-            return;
-        }
-        btn.disabled = true; btn.textContent = 'Отправка...';
-        setTimeout(() => {
-            res.style.color = 'var(--gold)';
-            res.textContent = '✓ Заявка принята! Наш менеджер свяжется с вами в течение 2 часов.';
-            btn.disabled = false; btn.textContent = 'Отправить заявку';
-            document.getElementById('pf-company').value = '';
-            document.getElementById('pf-name').value = '';
-            document.getElementById('pf-phone').value = '';
-            document.getElementById('pf-email').value = '';
-            document.getElementById('pf-msg').value = '';
-        }, 1500);
+function getFilteredPlaces() {
+    return allPlaces.filter(p => {
+        const typeOk = activePlacesType === 'all' || (p.types||[]).includes(activePlacesType);
+        const catOk  = activePlacesCat  === 'all' || p.category === activePlacesCat;
+        return typeOk && catOk;
     });
 }
+function renderFilteredPlaces() { placesPage=0; renderPlacesGrid(getFilteredPlaces()); }
+function renderPlacesGrid(places) {
+    const grid = document.getElementById('places-grid');
+    const slice = places.slice(0, (placesPage+1)*PER_PAGE);
+    if (!slice.length) {
+        grid.innerHTML = `<div class="empty-state"><span>🔍</span><h3>Ничего не найдено</h3><p style="color:var(--gray)">Попробуйте другой фильтр</p></div>`;
+        document.getElementById('load-more-places-btn').style.display='none'; return;
+    }
+    grid.innerHTML = slice.map((p,i) => renderPlaceCard(p,i)).join('');
+    const btn = document.getElementById('load-more-places-btn');
+    const rem = places.length - slice.length;
+    btn.style.display = rem > 0 ? 'inline-block' : 'none';
+    btn.textContent = `Загрузить ещё (${rem}) →`;
+}
+function loadMorePlaces() { placesPage++; renderPlacesGrid(getFilteredPlaces()); }
 
-// ════ INIT NEW FEATURES ════
-document.addEventListener('DOMContentLoaded', () => {
-    updateCartUI();
-    initShopFilter();
-    initPartnershipForm();
-    // SPC cards as tab-links already handled by attachTabLinks
+function renderPlaceCard(p, i=0) {
+    const isFav = favorites.includes(p.id);
+    const typeTags = (p.types||[]).map(t =>
+        `<span class="type-tag ${t}">${t==='romance'?'❤️ Романтика':t==='friends'?'👫 Друзья':'👨‍👩‍👧 Семья'}</span>`
+    ).join('');
+    return `<div class="place-card" style="animation-delay:${Math.min(i,8)*0.05}s" onclick="openPlaceModal(${p.id})">
+      <div class="card-img-wrap">
+        <img class="card-img" src="${p.image_url||''}" alt="${p.name}" loading="lazy"
+             onerror="this.src='https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=600'"/>
+        <div class="card-badge">${p.category}</div>
+        <button class="card-fav ${isFav?'active':''}" onclick="toggleFav(event,${p.id})">${isFav?'❤️':'🤍'}</button>
+      </div>
+      <div class="card-body">
+        <h3 class="card-title">${p.name}</h3>
+        <p class="card-desc">${p.description}</p>
+        <div class="card-meta"><span class="card-rating">⭐ ${p.rating}</span><span class="card-city">📍 ${p.city||''}</span></div>
+        <div class="card-types">${typeTags}</div>
+      </div>
+      <div class="card-footer">
+        <span class="card-price">${p.price_range||'—'}</span>
+        <button class="btn-more" onclick="openPlaceModal(${p.id})">Подробнее</button>
+      </div>
+    </div>`;
+}
+function updateNavBadge() { const el=document.getElementById('nav-cnt-places'); if(el) el.textContent=allPlaces.length; }
+
+/* ════════════ PLACE MODAL + КОНТАКТЫ ════════════ */
+// Генерируем соцсети на основе данных места
+function generateContacts(place) {
+    const slug = place.name.toLowerCase()
+        .replace(/[«»""']/g,'')
+        .replace(/\s+/g,'_')
+        .replace(/[^a-zа-яё0-9_]/gi,'')
+        .slice(0,20);
+    const phone = '+996 ' + (700 + Math.floor(Math.random()*299)).toString() + ' ' +
+        (100 + Math.floor(Math.random()*899)).toString().slice(0,3) + ' ' +
+        (100 + Math.floor(Math.random()*899)).toString().slice(0,3);
+
+    const contacts = [
+        { type:'inst', icon:'📸', label:'Instagram', href:`https://instagram.com/${slug}` },
+        { type:'tg',   icon:'✈️', label:'Telegram',  href:`https://t.me/${slug}` },
+        { type:'wa',   icon:'💬', label:'WhatsApp',  href:`https://wa.me/996${phone.replace(/\D/g,'').slice(3)}` },
+        { type:'web',  icon:'🌐', label:'Сайт',      href:`https://${slug}.kg` },
+        { type:'phone',icon:'📞', label:phone,        href:`tel:${phone.replace(/\s/g,'')}` },
+    ];
+    return contacts;
+}
+
+function openPlaceModal(id) {
+    const p = allPlaces.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('pm-img').src = p.image_url || '';
+    document.getElementById('pm-cat').textContent = p.category?.toUpperCase();
+    document.getElementById('pm-rating').textContent = `⭐ ${p.rating}`;
+    document.getElementById('pm-title').textContent = p.name;
+    document.getElementById('pm-desc').textContent = p.description;
+    document.getElementById('pm-address').textContent = p.address || '–';
+    document.getElementById('pm-city').textContent = p.city || '–';
+    document.getElementById('pm-price').textContent = p.price_range || '–';
+    document.getElementById('pm-category').textContent = p.category || '–';
+    document.getElementById('pm-tags').innerHTML = (p.types||[]).map(t =>
+        `<span class="type-tag ${t}">${t==='romance'?'❤️ Романтика':t==='friends'?'👫 С друзьями':'👨‍👩‍👧 Семья'}</span>`
+    ).join('');
+    // Контакты
+    const contacts = generateContacts(p);
+    document.getElementById('pm-contacts').innerHTML = contacts.map(c =>
+        `<a class="pm-contact-btn ${c.type}" href="${c.href}" target="_blank" rel="noopener">
+           <span class="pc-icon">${c.icon}</span>${c.label}
+         </a>`
+    ).join('');
+    if (p.location) {
+        const [lat,lng] = p.location.split(',');
+        document.getElementById('pm-map-link').href = `https://maps.google.com/?q=${lat},${lng}`;
+    }
+    openModal('place-overlay');
+}
+
+/* ════════════ ИЗБРАННОЕ ════════════ */
+function toggleFav(e, id) {
+    e.stopPropagation();
+    const idx = favorites.indexOf(id);
+    if (idx===-1) { favorites.push(id); showToast('❤️ Добавлено в избранное'); }
+    else { favorites.splice(idx,1); showToast('Удалено из избранного'); }
+    localStorage.setItem('kg_favorites', JSON.stringify(favorites));
+    renderFilteredPlaces(); updateFavBadge();
+}
+function renderFavGrid() {
+    const grid = document.getElementById('fav-grid');
+    if (!grid) return;
+    const favPlaces = allPlaces.filter(p => favorites.includes(p.id));
+    if (!favPlaces.length) {
+        grid.innerHTML = `<div class="empty-state"><span>❤️</span><h3>Пока пусто</h3><p style="color:var(--gray);font-size:13px">Нажимай ♡ на карточках чтобы сохранять здесь</p><button class="btn-gold" onclick="switchTab('places')">Найти место</button></div>`;
+        return;
+    }
+    grid.innerHTML = favPlaces.map((p,i) => renderPlaceCard(p,i)).join('');
+}
+function updateFavBadge() {
+    const el = document.getElementById('nav-cnt-fav');
+    if (el) el.textContent = favorites.length;
+}
+
+/* ════════════ AUTH ════════════ */
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function switchAuthTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
+    document.querySelectorAll('.auth-pane').forEach(p => p.classList.remove('active'));
+    document.getElementById(`pane-${tab}`).classList.add('active');
+}
+async function doLogin() {
+    const email=document.getElementById('li-email').value.trim();
+    const pw=document.getElementById('li-password').value;
+    const errEl=document.getElementById('li-error');
+    const btn=document.getElementById('li-btn');
+    errEl.textContent='';
+    if (!email||!pw) { errEl.textContent='Введите email и пароль'; return; }
+    btn.disabled=true; btn.textContent='Входим...';
+    try {
+        const res=await fetch(`${API}/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pw})});
+        const data=await res.json();
+        if (!res.ok) { errEl.textContent=data.detail||'Ошибка входа'; return; }
+        currentUser=data; localStorage.setItem('kg_user',JSON.stringify(data));
+        closeModal('auth-overlay'); updateAuthUI();
+        showToast(`Добро пожаловать, ${data.name}! 👋`);
+    } catch(e) { errEl.textContent='Сервер недоступен'; }
+    finally { btn.disabled=false; btn.textContent='Войти'; }
+}
+async function doRegister() {
+    const name=document.getElementById('reg-name').value.trim();
+    const email=document.getElementById('reg-email').value.trim();
+    const pw=document.getElementById('reg-password').value;
+    const errEl=document.getElementById('reg-error');
+    const btn=document.getElementById('reg-btn');
+    errEl.textContent='';
+    if (!name||!email||!pw) { errEl.textContent='Заполните все поля'; return; }
+    if (pw.length<6) { errEl.textContent='Пароль минимум 6 символов'; return; }
+    btn.disabled=true; btn.textContent='Создаём...';
+    try {
+        const res=await fetch(`${API}/auth/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password:pw})});
+        const data=await res.json();
+        if (!res.ok) { errEl.textContent=data.detail||'Ошибка регистрации'; return; }
+        currentUser=data; localStorage.setItem('kg_user',JSON.stringify(data));
+        closeModal('auth-overlay'); updateAuthUI();
+        showToast(`Добро пожаловать, ${data.name}! 🎉`);
+    } catch(e) { errEl.textContent='Сервер недоступен'; }
+    finally { btn.disabled=false; btn.textContent='Зарегистрироваться'; }
+}
+function doLogout() {
+    currentUser=null; localStorage.removeItem('kg_user');
+    closeModal('profile-overlay'); updateAuthUI();
+    showToast('Вы вышли из аккаунта');
+}
+function updateAuthUI() {
+    const name=currentUser?.name||'Войти';
+    const initial=currentUser?currentUser.name[0].toUpperCase():'?';
+    document.getElementById('header-avatar').textContent=initial;
+    document.getElementById('header-name').textContent=name.split(' ')[0];
+    document.getElementById('sb-avatar').textContent=initial;
+    document.getElementById('sb-name').textContent=name;
+    document.getElementById('sb-sub').textContent=currentUser?(currentUser.status||'Путешественник'):'Нажмите чтобы войти';
+    const planBadge=document.getElementById('sb-plan-badge');
+    if (currentUser) { planBadge.style.display='inline-block'; planBadge.textContent=currentUser.plan||'Базовый'; }
+    else planBadge.style.display='none';
+    document.getElementById('sb-auth-btn').textContent=currentUser?'Выйти':'Войти / Зарегистрироваться';
+    const profileLinks=document.getElementById('sb-profile-links');
+    if (profileLinks) profileLinks.style.display=currentUser?'block':'none';
+}
+
+/* ════════════ PROFILE MODAL ════════════ */
+function openProfileModal() {
+    if (!currentUser) { openModal('auth-overlay'); return; }
+    const u=currentUser;
+    document.getElementById('pm-avatar-big').textContent=u.name[0].toUpperCase();
+    document.getElementById('pm-name-display').textContent=u.name;
+    document.getElementById('pm-email-display').textContent=u.email;
+    document.getElementById('pm-plan-display').textContent=u.plan||'Базовый';
+    document.getElementById('pm-edit-name').value=u.name;
+    document.getElementById('pm-edit-status').value=u.status||'';
+    document.getElementById('pm-edit-plan').value=u.plan||'Базовый';
+    document.getElementById('pm-stat-places').textContent=allPlaces.length||'–';
+    document.getElementById('pm-stat-fav').textContent=favorites.length;
+    if (u.created_at) { const days=Math.max(1,Math.floor((Date.now()-new Date(u.created_at))/86400000)); document.getElementById('pm-stat-days').textContent=days; }
+    openModal('profile-overlay');
+}
+async function saveProfile() {
+    if (!currentUser) return;
+    const name=document.getElementById('pm-edit-name').value.trim();
+    const status=document.getElementById('pm-edit-status').value.trim();
+    const plan=document.getElementById('pm-edit-plan').value;
+    try {
+        const res=await fetch(`${API}/auth/user/${currentUser.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,status,plan})});
+        if (res.ok) { const data=await res.json(); currentUser={...currentUser,...data}; localStorage.setItem('kg_user',JSON.stringify(currentUser)); updateAuthUI(); closeModal('profile-overlay'); showToast('Профиль сохранён ✓'); }
+    } catch(e) { showToast('Ошибка сохранения'); }
+}
+
+/* ════════════ МАГАЗИН ════════════ */
+const SHOP_ITEMS = [
+    {id:1,name:'Букет из гор',desc:'Полевые цветы в крафтовой упаковке',cat:'цветы',img:'https://images.unsplash.com/photo-1487530811176-3780de880c2d?q=80&w=400',price:990,badge:'new'},
+    {id:2,name:'Тюльпаны Иссык-Куля',desc:'Свежие тюльпаны 51 штука',cat:'цветы',img:'https://images.unsplash.com/photo-1462275646964-a0e3386b89fa?q=80&w=400',price:1490,badge:'hit'},
+    {id:3,name:'Войлочная кружка',desc:'Ручная работа с орнаментом',cat:'сувениры',img:'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?q=80&w=400',price:650,badge:''},
+    {id:4,name:'Шырдак-коврик',desc:'Мини-ковёр из войлока 30×30',cat:'сувениры',img:'https://images.unsplash.com/photo-1581783898377-1c85bf937427?q=80&w=400',price:1200,badge:'new'},
+    {id:5,name:'Облепиховый крем',desc:'Натуральный уход из горных ягод',cat:'косметика',img:'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?q=80&w=400',price:890,badge:'hit'},
+    {id:6,name:'Горное масло',desc:'100% натуральное жожоба',cat:'косметика',img:'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?q=80&w=400',price:1350,old:1800,badge:'sale'},
+    {id:7,name:'Подарочный набор',desc:'Чай + варенье + орехи из Арстанбапа',cat:'подарки',img:'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?q=80&w=400',price:2490,badge:'hit'},
+    {id:8,name:'Ювелирные серьги',desc:'Серебро с кыргызским орнаментом',cat:'украшения',img:'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=400',price:3200,badge:'new'},
+    {id:9,name:'Маска для лица',desc:'Горная глина + розмарин',cat:'уход',img:'https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=400',price:750,badge:''},
+    {id:10,name:'Ароматическая свеча',desc:'Запах гор и хвои',cat:'подарки',img:'https://images.unsplash.com/photo-1602607144878-29e698e2d1ab?q=80&w=400',price:1100,badge:''},
+    {id:11,name:'Браслет Номад',desc:'Кожа + серебро, ручная работа',cat:'украшения',img:'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?q=80&w=400',price:1800,badge:'new'},
+    {id:12,name:'Сыворотка облепиха',desc:'Витамин C из горных ягод',cat:'уход',img:'https://images.unsplash.com/photo-1576426863848-c21f53c60b19?q=80&w=400',price:2100,old:2800,badge:'sale'},
+];
+let shopFilter='all';
+function filterShop(cat,el) {
+    shopFilter=cat;
+    document.querySelectorAll('.shop-filter-bar .chip').forEach(b=>b.classList.remove('active'));
+    if(el) el.classList.add('active');
+    renderShop();
+}
+function renderShop() {
+    const grid=document.getElementById('shop-grid');
+    if(!grid) return;
+    const items=shopFilter==='all'?SHOP_ITEMS:SHOP_ITEMS.filter(i=>i.cat===shopFilter);
+    grid.innerHTML=items.map(item=>{
+        const inCart=cart.includes(item.id);
+        const badge=item.badge?`<div class="product-badge ${item.badge==='sale'?'badge-sale':item.badge==='new'?'badge-new':'badge-hit'}">${item.badge==='sale'?'Скидка':item.badge==='new'?'Новинка':'Хит'}</div>`:'';
+        const oldPr=item.old?`<span class="price-old">${item.old.toLocaleString()} сом</span>`:'';
+        return `<div class="product-card">
+          <div class="product-img-wrap"><img class="product-img" src="${item.img}" alt="${item.name}" loading="lazy" onerror="this.style.opacity=0"/>${badge}</div>
+          <div class="product-body"><div class="product-cat">${item.cat}</div><div class="product-name">${item.name}</div><div class="product-desc">${item.desc}</div></div>
+          <div class="product-footer"><div class="product-price"><span class="price-current">${item.price.toLocaleString()} сом</span>${oldPr}</div><button class="btn-cart ${inCart?'in-cart':''}" onclick="toggleCart(${item.id})">${inCart?'✓ В корзине':'В корзину'}</button></div>
+        </div>`;
+    }).join('');
+}
+function toggleCart(id) {
+    const idx=cart.indexOf(id);
+    if(idx===-1){cart.push(id);showToast('🛒 Добавлено в корзину');}else{cart.splice(idx,1);}
+    localStorage.setItem('kg_cart',JSON.stringify(cart)); updateCartUI(); renderShop();
+}
+function updateCartUI() {
+    document.getElementById('cart-count').textContent=cart.length;
+    document.getElementById('cart-fab').classList.toggle('visible',cart.length>0);
+}
+
+/* ════════════ ПРОМОКОДЫ ════════════ */
+function copyPromo(el,code) {
+    navigator.clipboard.writeText(code).catch(()=>{});
+    el.style.background='rgba(212,175,55,0.35)';
+    showToast(`✓ Промокод ${code} скопирован!`);
+    setTimeout(()=>{el.style.background='';},1500);
+}
+
+/* ════════════ ФОРМЫ ════════════ */
+function submitBooking() {
+    const name=document.getElementById('bf-name').value.trim();
+    const phone=document.getElementById('bf-phone').value.trim();
+    const res=document.getElementById('bf-result');
+    if(!name||!phone){res.style.color='#ff7090';res.textContent='Пожалуйста, заполните имя и телефон';return;}
+    res.style.color='var(--gold)';res.textContent=`✓ Заявка принята, ${name}! Свяжемся с вами в течение 30 минут.`;
+    ['bf-name','bf-phone','bf-comment'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    showToast('✅ Заявка отправлена!');
+}
+function submitPartner() {
+    const biz=document.getElementById('pf-biz').value.trim();
+    const phone=document.getElementById('pf-phone').value.trim();
+    const wrap=document.getElementById('pf-result-wrap');
+    const res=document.getElementById('pf-result');
+    if(!biz||!phone){wrap.style.display='block';res.style.color='#ff7090';res.textContent='Заполните название бизнеса и телефон';return;}
+    wrap.style.display='block';res.style.color='var(--gold)';
+    res.textContent=`✓ Заявка от "${biz}" принята! Менеджер свяжется в течение 1 рабочего дня.`;
+    showToast('✅ Заявка на партнёрство отправлена!');
+}
+
+/* ════════════ TOAST ════════════ */
+function showToast(msg) {
+    let t=document.getElementById('toast');
+    if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(10,5,30,0.97);backdrop-filter:blur(20px);border:1px solid rgba(212,175,55,0.4);color:#fff;padding:12px 24px;border-radius:50px;font-size:13px;z-index:9999;opacity:0;transition:all 0.35s;pointer-events:none;font-family:Montserrat;white-space:nowrap;box-shadow:0 8px 30px rgba(0,0,0,0.5)';document.body.appendChild(t);}
+    t.textContent=msg;t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';
+    clearTimeout(t._timer);t._timer=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(20px)';},2800);
+}
+
+/* ════════════ ESC / OVERLAY ════════════ */
+document.addEventListener('keydown', e=>{
+    if(e.key==='Escape'){['auth-overlay','place-overlay','profile-overlay','info-overlay'].forEach(id=>closeModal(id));closeSidebar();}
+});
+['auth-overlay','place-overlay','profile-overlay','info-overlay'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('click',e=>{if(e.target===el)closeModal(id);});
 });

@@ -33,7 +33,7 @@ def get_places(
     type: Optional[str] = Query(None, description="Фильтр по типу (friends/romance/family)"),
     search: Optional[str] = Query(None, description="Поиск по названию/описанию"),
     city: Optional[str] = Query(None, description="Фильтр по городу"),
-    limit: int = Query(50, ge=1, le=100),
+    limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
 ):
     conn = get_db_connection()
@@ -161,3 +161,77 @@ def get_cities():
     rows = conn.execute("SELECT DISTINCT city FROM places WHERE city IS NOT NULL ORDER BY city").fetchall()
     conn.close()
     return [r[0] for r in rows]
+
+
+# ──────────────────────────────────────────────
+# AUTH — Регистрация / Вход / Профиль
+# ──────────────────────────────────────────────
+import hashlib
+from pydantic import BaseModel
+
+class RegisterData(BaseModel):
+    name: str
+    email: str
+    password: str
+
+class LoginData(BaseModel):
+    email: str
+    password: str
+
+class ProfileUpdate(BaseModel):
+    name: str | None = None
+    status: str | None = None
+    plan: str | None = None
+
+def hash_pw(pw: str) -> str:
+    return hashlib.sha256(pw.encode()).hexdigest()
+
+@app.post("/auth/register")
+def register(data: RegisterData):
+    if len(data.password) < 6:
+        raise HTTPException(status_code=400, detail="Пароль минимум 6 символов")
+    conn = get_db_connection()
+    existing = conn.execute("SELECT id FROM users WHERE email=?", (data.email,)).fetchone()
+    if existing:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Email уже зарегистрирован")
+    conn.execute(
+        "INSERT INTO users (name, email, password) VALUES (?,?,?)",
+        (data.name.strip(), data.email.lower().strip(), hash_pw(data.password))
+    )
+    conn.commit()
+    row = conn.execute("SELECT id,name,email,status,plan,created_at FROM users WHERE email=?", (data.email,)).fetchone()
+    conn.close()
+    return dict(row)
+
+@app.post("/auth/login")
+def login(data: LoginData):
+    conn = get_db_connection()
+    row = conn.execute(
+        "SELECT id,name,email,status,plan,created_at FROM users WHERE email=? AND password=?",
+        (data.email.lower().strip(), hash_pw(data.password))
+    ).fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=401, detail="Неверный email или пароль")
+    return dict(row)
+
+@app.get("/auth/user/{user_id}")
+def get_user(user_id: int):
+    conn = get_db_connection()
+    row = conn.execute("SELECT id,name,email,status,plan,created_at FROM users WHERE id=?", (user_id,)).fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return dict(row)
+
+@app.put("/auth/user/{user_id}")
+def update_user(user_id: int, data: ProfileUpdate):
+    conn = get_db_connection()
+    if data.name: conn.execute("UPDATE users SET name=? WHERE id=?", (data.name, user_id))
+    if data.status: conn.execute("UPDATE users SET status=? WHERE id=?", (data.status, user_id))
+    if data.plan: conn.execute("UPDATE users SET plan=? WHERE id=?", (data.plan, user_id))
+    conn.commit()
+    row = conn.execute("SELECT id,name,email,status,plan,created_at FROM users WHERE id=?", (user_id,)).fetchone()
+    conn.close()
+    return dict(row)
